@@ -130,9 +130,7 @@ async def test_get_chat_stats(mock_kv):
         mock_dt.now.return_value = base_date
         mock_dt.side_effect = lambda *args, **kwargs: datetime(*args, **kwargs)
         
-        # Mock timedelta
-        with patch('app.core.analytics.timedelta', timedelta):
-            stats = await get_chat_stats(3)  # 3 days
+        stats = await get_chat_stats(3)  # 3 days
     
     assert "sessions_by_day" in stats
     assert "tokens_by_day" in stats

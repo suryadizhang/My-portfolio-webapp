@@ -1,0 +1,60 @@
+{
+  "documents": [
+    {
+      "id": "profile_about",
+      "slug": "about",
+      "title": "About Suryadi Zhang",
+      "description": "Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres",
+      "text": "Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres. I turn ambiguous requirements into production-ready systems that ship continuously with CI/CD. Model data and design REST APIs with auth, pagination, and clear errors, documented with OpenAPI. Build responsive React/Next.js UIs that perform well on mobile and are accessible by default. Add guardrails with validation (Pydantic/Zod), rate limiting, logging/metrics, and automated tests. Ship safely with GitHub Actions (lint, unit/integration tests, preview deploys).",
+      "tags": ["about", "profile", "experience"],
+      "tech": ["TypeScript", "JavaScript", "Python", "React", "Next.js"],
+      "type": "profile"
+    },
+    {
+      "id": "my-hibachi",
+      "slug": "my-hibachi",
+      "title": "My Hibachi LLC - Live Booking Platform",
+      "description": "Full-stack booking platform with Next.js frontend and FastAPI backend, featuring role-based access, secure authentication, and CI/CD deployment",
+      "text": "My Hibachi LLC is a comprehensive booking platform that enables customers to book hibachi catering services with a seamless, mobile-first experience. The platform features a responsive Next.js frontend deployed on Vercel and a robust FastAPI backend running on VPS infrastructure. Key features include mobile-first responsive design with Tailwind CSS, server-side rendering for optimal SEO and performance, form validation with Zod for type-safe data handling, real-time booking availability with optimistic updates, and accessible UI components following WCAG guidelines. Backend includes RESTful API with comprehensive OpenAPI documentation, JWT authentication with role-based access control, database migrations with SQLAlchemy ORM, rate limiting to prevent abuse, and comprehensive logging and error handling.",
+      "tags": ["Next.js", "TypeScript", "FastAPI", "Postgres", "Tailwind", "Vercel", "VPS", "GitHub Actions"],
+      "tech": ["Next.js", "TypeScript", "FastAPI", "Postgres", "Tailwind CSS", "Vercel", "GitHub Actions"],
+      "type": "project"
+    },
+    {
+      "id": "mechanic-shop-api",
+      "slug": "mechanic-shop-api",
+      "title": "Mechanic Shop API - Service Management System",
+      "description": "RESTful API for managing auto repair shop operations with customer management, service tracking, inventory, and comprehensive testing",
+      "text": "The Mechanic Shop API is a comprehensive backend service designed to manage all aspects of an auto repair shop's operations. Built with FastAPI and featuring complete CRUD operations, this API handles customer management, service tracking, inventory control, and technician scheduling with full OpenAPI documentation. Core functionality includes customer management with complete customer profiles and vehicle history, service records tracking repairs and maintenance, inventory system with parts catalog and stock levels, technician scheduling with work assignments, and invoice generation with automated billing. API architecture features RESTful design with standard HTTP methods, OpenAPI documentation with interactive API explorer, data validation using Pydantic models, standardized error handling, and proper database relations with foreign keys and cascading operations.",
+      "tags": ["FastAPI", "Python", "SQLAlchemy", "Postgres", "Pydantic", "Pytest", "OpenAPI", "CRUD", "REST"],
+      "tech": ["FastAPI", "Python", "SQLAlchemy", "Postgres", "Pydantic", "Pytest", "OpenAPI"],
+      "type": "project"
+    },
+    {
+      "id": "experience_my_hibachi_llc",
+      "slug": "my-hibachi-llc",
+      "title": "Founder & Software Lead at My Hibachi LLC",
+      "description": "Founder & Software Lead role at My Hibachi LLC (Jun 2025 – Present)",
+      "text": "Shipped Next.js/Tailwind frontend (Vercel) + FastAPI/Postgres backend (VPS) for live booking + admin → 100% self-serve bookings. Implemented rate limiting, caching, schema validation → reduced user-visible errors by ~25%. Automated CI/CD with GitHub Actions → cut release time by ~40% and enabled daily deployments. Structured repos, environments, and PR checks → onboarded contributors smoothly.",
+      "tags": ["experience", "work"],
+      "tech": [],
+      "type": "experience"
+    },
+    {
+      "id": "experience_coding_temple",
+      "slug": "coding-temple",
+      "title": "Full Stack Engineer (Apprenticeship) at Coding Temple",
+      "description": "Full Stack Engineer (Apprenticeship) role at Coding Temple (Mar 2025 – Present)",
+      "text": "Built user-facing features in Next.js/React + FastAPI/Flask → improved responsiveness and reduced page load ~20%. Authored REST endpoints with validation & OpenAPI → clearer integration and faster onboarding. Added CI pipelines with Postgres service → improved merge reliability by ~35%. Delivered a capstone app (auth + CRUD + responsive UI) with documented setup.",
+      "tags": ["experience", "work"],
+      "tech": [],
+      "type": "experience"
+    }
+  ],
+  "vectors_array": [],
+  "metadata": {
+    "num_documents": 5,
+    "num_features": 0,
+    "created_at": "manual_creation"
+  }
+}

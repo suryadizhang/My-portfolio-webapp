@@ -69,7 +69,7 @@ def test_chat_endpoint_general_mode(mock_log_analytics, mock_openai_stream):
 
 @patch('app.routes.chat.get_openai_stream')
 @patch('app.routes.chat.log_analytics')
-@patch('app.routes.chat.augment_prompt_with_context')
+@patch('app.core.rag.augment_prompt_with_context')
 def test_chat_endpoint_projects_mode(mock_augment, mock_log_analytics, mock_openai_stream):
     """Test chat endpoint in projects mode with RAG"""
     # Mock RAG augmentation

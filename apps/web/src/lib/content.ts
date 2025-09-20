@@ -48,15 +48,23 @@ export interface Profile {
 // Project types
 export interface ProjectFrontmatter {
   title: string
+  description?: string
+  tech?: string[]
+  category?: string
+  featured?: boolean
+  live?: string
+  source?: string
+  cover: string
+  date?: string
   slug: string
   year: number
   summary: string
   tags: string[]
-  cover: string
   links: {
     live?: string
     repo?: string
     demo?: string
+    docs?: string
   }
 }
 
@@ -65,7 +73,7 @@ export interface Project {
   content: string
 }
 
-const contentDir = path.join(process.cwd(), 'src/content')
+const contentDir = path.join(process.cwd(), 'content')
 const projectsDir = path.join(contentDir, 'projects')
 
 // Load profile data
