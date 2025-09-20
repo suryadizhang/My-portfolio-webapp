@@ -2,10 +2,12 @@ import { getAllProjects, getProjectBySlug, type ProjectFrontmatter } from '@/lib
 import { generateSiteMetadata, generateProjectJsonLd } from '@/lib/seo'
 import { ProjectImage } from '@/components/project-image'
 import { Badge, Button } from '@portfolio/ui'
-import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import { ArrowLeft, ExternalLink, Github, Heart, Eye } from 'lucide-react'
+
+// Disable static generation to avoid React version conflicts during build
+export const dynamic = 'force-dynamic'
 
 interface ProjectPageProps {
   params: Promise<{
@@ -13,12 +15,13 @@ interface ProjectPageProps {
   }>
 }
 
-export async function generateStaticParams() {
-  const projects = getAllProjects()
-  return projects.map((project: ProjectFrontmatter) => ({
-    slug: project.slug,
-  }))
-}
+// Disable generateStaticParams during CI to avoid prerender issues
+// export async function generateStaticParams() {
+//   const projects = getAllProjects()
+//   return projects.map((project: ProjectFrontmatter) => ({
+//     slug: project.slug,
+//   }))
+// }
 
 export async function generateMetadata({ params }: ProjectPageProps) {
   const { slug } = await params
@@ -95,7 +98,14 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
             {/* Project content */}
             <div className="prose prose-lg dark:prose-invert max-w-none">
-              <MDXRemote source={content} />
+              {/* Temporarily render as plain text to avoid React version conflicts */}
+              <div className="bg-muted/50 rounded-lg p-6">
+                <p className="text-sm text-muted-foreground mb-2">Project Content:</p>
+                <div className="whitespace-pre-wrap font-mono text-sm">{content}</div>
+              </div>
+              <p className="text-sm text-muted-foreground mt-4">
+                Note: Full MDX rendering will be restored after resolving build dependencies.
+              </p>
             </div>
           </div>
 
