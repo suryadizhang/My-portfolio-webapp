@@ -1,49 +1,60 @@
+import { getProfile } from '@/lib/content'
+import { generateSiteMetadata, generatePersonJsonLd } from '@/lib/seo'
+import { Badge, Button } from '@portfolio/ui'
 import { Calendar, MapPin, BookOpen, Award, Code2 } from 'lucide-react'
-import Image from 'next/image'
 
-export const metadata = {
-  title: 'About - Your Name',
-  description: 'Learn more about my journey as a full-stack developer, my skills, and what drives my passion for creating digital experiences.',
-}
+export const metadata = generateSiteMetadata(
+  'About',
+  'Learn more about my journey as a full-stack developer, my skills, and what drives my passion for creating digital experiences.'
+)
 
 export default function AboutPage() {
+  const profile = getProfile()
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      {/* Hero Section */}
-      <section className="mb-16">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h1 className="text-4xl font-bold mb-6">About Me</h1>
-            <p className="text-xl text-muted-foreground mb-6">
-              I'm a passionate full-stack developer with a love for creating digital experiences 
-              that are not just functional, but truly meaningful to users.
-            </p>
-            <p className="text-lg text-muted-foreground mb-8">
-              With over 5 years of experience in web development, I specialize in modern 
-              JavaScript frameworks, cloud architecture, and building scalable applications 
-              that solve real-world problems.
-            </p>
-            <div className="flex items-center gap-6 text-sm text-muted-foreground">
-              <div className="flex items-center gap-2">
-                <MapPin className="h-4 w-4" />
-                <span>San Francisco, CA</span>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(generatePersonJsonLd(profile)),
+        }}
+      />
+      <div className="container mx-auto px-4 py-16">
+        {/* Hero Section */}
+        <section className="mb-16">
+          <div className="grid md:grid-cols-2 gap-12 items-center">
+            <div>
+              <h1 className="text-4xl font-bold mb-6">About Me</h1>
+              <p className="text-xl text-muted-foreground mb-6">
+                {profile.about.summary}
+              </p>
+              <div className="flex items-center gap-6 text-sm text-muted-foreground mb-8">
+                <div className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" />
+                  <span>{profile.location}</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  <span>Available for work</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-4 w-4" />
-                <span>Available for work</span>
+              
+              {/* Contact Info */}
+              <div className="space-y-2 text-sm text-muted-foreground">
+                <p>📧 {profile.email}</p>
+                <p>📱 {profile.phone}</p>
+                <p>🗣️ Pronouns: {profile.pronouns}</p>
+              </div>
+            </div>
+            <div className="relative">
+              <div className="relative aspect-square max-w-md mx-auto">
+                <div className="w-full h-full rounded-2xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
+                  <span className="text-primary font-medium">Professional Photo</span>
+                </div>
               </div>
             </div>
           </div>
-          <div className="relative">
-            <div className="relative aspect-square max-w-md mx-auto">
-              {/* Placeholder for profile image */}
-              <div className="w-full h-full rounded-2xl bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-primary font-medium">Professional Photo</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+        </section>
 
       {/* Skills Section */}
       <section className="mb-16">

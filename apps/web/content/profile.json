@@ -1,0 +1,90 @@
+{
+  "name": "Suryadi Zhang",
+  "pronouns": "He/Him",
+  "title": "Software Engineer (Full-Stack) · React & Python",
+  "tagline": "Next.js, FastAPI, Postgres · Shipped live booking + admin · CI/CD",
+  "location": "Fremont, CA, USA",
+  "email": "suryadizhang86@gmail.com",
+  "phone": "(210) 388-4155",
+  "social": {
+    "linkedin": "https://www.linkedin.com/in/suryadi-zhang/",
+    "github": "https://github.com/suryadizhang",
+    "portfolio": "https://github.com/suryadizhang/My-portfolio-webapp"
+  },
+  "about": {
+    "summary": "Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres. I turn ambiguous requirements into production-ready systems that ship continuously with CI/CD.",
+    "howIWork": [
+      "Model data and design REST APIs with auth, pagination, and clear errors, documented with OpenAPI",
+      "Build responsive React/Next.js UIs that perform well on mobile and are accessible by default",
+      "Add guardrails with validation (Pydantic/Zod), rate limiting, logging/metrics, and automated tests",
+      "Ship safely with GitHub Actions (lint, unit/integration tests, preview deploys)"
+    ],
+    "impact": [
+      "Shipped a live booking platform + admin (Next.js/TypeScript + FastAPI/Postgres) deployed on Vercel + VPS → enabled role-based access, secure auth, rate limiting, and automated deployments",
+      "Increased deployment frequency by ~30% by introducing CI/CD pipelines → fewer regressions and faster delivery",
+      "Reduced setup time by ~15% in event operations with SOPs and automation → applied same discipline in engineering"
+    ],
+    "whatIBuild": [
+      "Mobile-first booking & e-commerce flows",
+      "Well-documented APIs with strong auth and predictable error models",
+      "Admin dashboards that reduce manual work",
+      "CI/CD pipelines for confident daily releases"
+    ]
+  },
+  "skillsPrimary": ["TypeScript","JavaScript","Python","React","Next.js","FastAPI","Flask","Postgres","SQLAlchemy","Tailwind CSS","GitHub Actions","Vercel","OpenAPI/Swagger","MySQL","Express","Postman/Insomnia","CORS","OWASP basics"],
+  "hobbies": ["Hibachi cooking","Hiking","Basketball","Music","Exploring new frameworks"],
+  "experience": [
+    {
+      "role": "Founder & Software Lead",
+      "company": "My Hibachi LLC",
+      "dates": "Jun 2025 – Present",
+      "location": "Hybrid",
+      "bullets": [
+        "Shipped Next.js/Tailwind frontend (Vercel) + FastAPI/Postgres backend (VPS) for live booking + admin → 100% self-serve bookings",
+        "Implemented rate limiting, caching, schema validation → reduced user-visible errors by ~25%",
+        "Automated CI/CD with GitHub Actions → cut release time by ~40% and enabled daily deployments",
+        "Structured repos, environments, and PR checks → onboarded contributors smoothly"
+      ]
+    },
+    {
+      "role": "Full Stack Engineer (Apprenticeship)",
+      "company": "Coding Temple",
+      "dates": "Mar 2025 – Present",
+      "location": "Remote",
+      "bullets": [
+        "Built user-facing features in Next.js/React + FastAPI/Flask → improved responsiveness and reduced page load ~20%",
+        "Authored REST endpoints with validation & OpenAPI → clearer integration and faster onboarding",
+        "Added CI pipelines with Postgres service → improved merge reliability by ~35%",
+        "Delivered a capstone app (auth + CRUD + responsive UI) with documented setup"
+      ]
+    },
+    {
+      "role": "Additional Experience — Hospitality & Culinary",
+      "company": "Multiple Restaurants & Freelance",
+      "dates": "Aug 2018 – Jun 2025",
+      "location": "US · Hybrid",
+      "bullets": [
+        "Coordinated 100+ events; created SOPs reducing setup errors by ~15%",
+        "Mentored 10+ staff; honed leadership, communication, and teamwork"
+      ]
+    }
+  ],
+  "education": [
+    {
+      "school": "Coding Temple",
+      "program": "Full-Stack Software Engineering",
+      "dates": "Mar 2025 – Sep 2025",
+      "notes": "Certificate of Completion; capstone booking platform with role-based access, secure auth, CI/CD"
+    },
+    {
+      "school": "Universitas Surabaya",
+      "program": "Economics (Some College, no degree)",
+      "dates": "Sep 2005",
+      "notes": "Coursework in Micro/Macroeconomics and Statistics; foundations for data analysis"
+    }
+  ],
+  "certs": [
+    {"name":"Backend Specialist","issuer":"Coding Temple","id":"161097302","issued":"Sep 2025"},
+    {"name":"Software Engineering: Certificate of Completion","issuer":"Coding Temple","id":"161097303","issued":"Sep 2025"}
+  ]
+}

@@ -1,6 +1,11 @@
+import { getAllProjects, getProjectBySlug } from '@/lib/content'
+import { generateSiteMetadata, generateProjectJsonLd } from '@/lib/seo'
+import { Badge, Button } from '@portfolio/ui'
+import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import { ArrowLeft, ExternalLink, Github } from 'lucide-react'
+import Image from 'next/image'
+import { ArrowLeft, ExternalLink, Github, Heart, Eye } from 'lucide-react'
 
 interface ProjectPageProps {
   params: Promise<{
@@ -8,42 +13,16 @@ interface ProjectPageProps {
   }>
 }
 
-// This will eventually load from MDX content
-const projectData: Record<string, any> = {
-  'ai-booking-platform': {
-    title: 'AI-Powered Booking Platform',
-    summary: 'Full-stack booking application with AI recommendations, real-time availability, and secure payment processing.',
-    tags: ['Next.js', 'TypeScript', 'PostgreSQL', 'Stripe', 'AI/ML'],
-    year: 2024,
-    github: 'https://github.com/yourusername/ai-booking-platform',
-    live: 'https://booking-platform-demo.vercel.app',
-    content: `
-      <h1>AI-Powered Booking Platform</h1>
-      <p>A comprehensive booking platform that leverages artificial intelligence to provide personalized recommendations and streamline the booking process.</p>
-      
-      <h2>Features</h2>
-      <ul>
-        <li><strong>Smart Recommendations</strong>: AI-powered suggestions based on user preferences</li>
-        <li><strong>Real-time Availability</strong>: Live updates of available slots and services</li>
-        <li><strong>Secure Payments</strong>: Integrated with Stripe for secure payment processing</li>
-        <li><strong>User Dashboard</strong>: Comprehensive dashboard for managing bookings</li>
-      </ul>
-      
-      <h2>Technical Implementation</h2>
-      <p>This project demonstrates my ability to build complex, full-stack applications with modern technologies.</p>
-    `
-  }
-}
-
 export async function generateStaticParams() {
-  return Object.keys(projectData).map((slug) => ({
-    slug,
+  const projects = getAllProjects()
+  return projects.map((project) => ({
+    slug: project.slug,
   }))
 }
 
 export async function generateMetadata({ params }: ProjectPageProps) {
   const { slug } = await params
-  const project = projectData[slug]
+  const project = getProjectBySlug(slug)
   
   if (!project) {
     return {
@@ -51,90 +30,147 @@ export async function generateMetadata({ params }: ProjectPageProps) {
     }
   }
 
-  return {
-    title: `${project.title} - Your Name`,
-    description: project.summary,
-    openGraph: {
-      title: project.title,
-      description: project.summary,
-      type: 'article',
-    },
-  }
+  return generateSiteMetadata(
+    project.frontmatter.title,
+    project.frontmatter.summary,
+    `/projects/${slug}`
+  )
 }
 
 export default async function ProjectPage({ params }: ProjectPageProps) {
   const { slug } = await params
-  const project = projectData[slug]
+  const project = getProjectBySlug(slug)
 
   if (!project) {
     notFound()
   }
 
+  const { frontmatter, content } = project
+
   return (
-    <div className="container mx-auto px-4 py-16">
-      {/* Back button */}
-      <div className="mb-8">
-        <Link 
-          href="/projects"
-          className="inline-flex items-center text-sm text-muted-foreground hover:text-primary transition-colors"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Projects
-        </Link>
-      </div>
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(generateProjectJsonLd(frontmatter)),
+        }}
+      />
+      <div className="container mx-auto px-4 py-16">
+        <div className="grid lg:grid-cols-4 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-3">
+            {/* Back button */}
+            <div className="mb-8">
+              <Button variant="ghost" asChild>
+                <Link href="/projects">
+                  <ArrowLeft className="mr-2 h-4 w-4" />
+                  Back to Projects
+                </Link>
+              </Button>
+            </div>
 
-      {/* Project header */}
-      <div className="mb-12">
-        <div className="flex flex-wrap gap-2 mb-4">
-          {project.tags.map((tag: string) => (
-            <span
-              key={tag}
-              className="px-3 py-1 text-sm font-medium bg-secondary text-secondary-foreground rounded-full"
-            >
-              {tag}
-            </span>
-          ))}
+            {/* Project header */}
+            <div className="mb-12">
+              <div className="flex flex-wrap gap-2 mb-4">
+                {frontmatter.tags.map((tag: string) => (
+                  <Badge key={tag} variant="secondary">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+              
+              <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
+              <p className="text-xl text-muted-foreground mb-6">{frontmatter.summary}</p>
+            </div>
+
+            {/* Project cover image */}
+            <div className="relative aspect-video mb-12 rounded-lg overflow-hidden">
+              <Image
+                src={frontmatter.cover}
+                alt={frontmatter.title}
+                fill
+                className="object-cover"
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement
+                  target.style.display = 'none'
+                }}
+              />
+            </div>
+
+            {/* Project content */}
+            <div className="prose prose-lg dark:prose-invert max-w-none">
+              <MDXRemote source={content} />
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-8 space-y-6">
+              {/* Project Info */}
+              <div className="border rounded-lg p-6">
+                <h3 className="font-semibold mb-4">Project Details</h3>
+                <div className="space-y-3 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Year:</span>
+                    <span className="ml-2 font-medium">{frontmatter.year}</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Technologies:</span>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {frontmatter.tags.map((tag: string) => (
+                        <Badge key={tag} variant="outline" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Links */}
+              <div className="space-y-3">
+                {frontmatter.links.live && (
+                  <Button className="w-full" asChild>
+                    <a href={frontmatter.links.live} target="_blank" rel="noopener noreferrer">
+                      <ExternalLink className="h-4 w-4 mr-2" />
+                      View Live
+                    </a>
+                  </Button>
+                )}
+                {frontmatter.links.repo && (
+                  <Button variant="outline" className="w-full" asChild>
+                    <a href={frontmatter.links.repo} target="_blank" rel="noopener noreferrer">
+                      <Github className="h-4 w-4 mr-2" />
+                      View Source
+                    </a>
+                  </Button>
+                )}
+              </div>
+
+              {/* Engagement placeholders */}
+              <div className="border rounded-lg p-6">
+                <h3 className="font-semibold mb-4">Engagement</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center text-muted-foreground">
+                      <Heart className="h-4 w-4 mr-2" />
+                      Likes
+                    </span>
+                    <span className="font-medium">24</span>
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="flex items-center text-muted-foreground">
+                      <Eye className="h-4 w-4 mr-2" />
+                      Views
+                    </span>
+                    <span className="font-medium">156</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <h1 className="text-4xl font-bold mb-4">{project.title}</h1>
-        <p className="text-xl text-muted-foreground mb-6">{project.summary}</p>
-        
-        {/* Action buttons */}
-        <div className="flex gap-4 mb-8">
-          {project.github && (
-            <a
-              href={project.github}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <Github className="h-4 w-4" />
-              View Source
-            </a>
-          )}
-          {project.live && (
-            <a
-              href={project.live}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 border border-border px-4 py-2 rounded-lg hover:bg-accent transition-colors"
-            >
-              <ExternalLink className="h-4 w-4" />
-              Live Demo
-            </a>
-          )}
-        </div>
       </div>
-
-      {/* Project cover image placeholder */}
-      <div className="relative aspect-video mb-12 rounded-lg overflow-hidden bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-        <span className="text-primary font-medium">Project Screenshot Coming Soon</span>
-      </div>
-
-      {/* Project content */}
-      <div className="prose prose-lg dark:prose-invert max-w-none">
-        <div dangerouslySetInnerHTML={{ __html: project.content }} />
-      </div>
-    </div>
+    </>
   )
 }

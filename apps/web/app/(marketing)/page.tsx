@@ -1,91 +1,131 @@
+import { getProfile, getFeaturedProjects } from '@/lib/content'
+import { generateSiteMetadata } from '@/lib/seo'
+import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfolio/ui'
+import { ExternalLink, Github, Linkedin, Mail } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
+
+export const metadata = generateSiteMetadata()
+
 export default function HomePage() {
+  const profile = getProfile()
+  const featuredProjects = getFeaturedProjects()
+
   return (
     <div className="container mx-auto px-4 py-16">
       {/* Hero Section */}
       <section className="text-center max-w-4xl mx-auto mb-20">
         <h1 className="text-5xl font-bold mb-6 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-          Your Name
+          {profile.name}
         </h1>
         <p className="text-xl text-muted-foreground mb-2">
-          Full-Stack Developer
+          {profile.title}
         </p>
-        <p className="text-lg text-muted-foreground mb-8">
-          Full-Stack Engineer building secure booking apps & AI-powered tools.
+        <p className="text-lg text-muted-foreground mb-4">
+          {profile.tagline}
+        </p>
+        <p className="text-sm text-muted-foreground mb-8">
+          📍 {profile.location}
         </p>
         
-        <div className="flex gap-4 justify-center">
-          <a 
-            href="/projects" 
-            className="bg-primary text-primary-foreground px-6 py-3 rounded-lg hover:bg-primary/90 transition-colors"
-          >
-            View Projects
-          </a>
-          <a 
-            href="/contact" 
-            className="border border-border px-6 py-3 rounded-lg hover:bg-accent transition-colors"
-          >
-            Get In Touch
-          </a>
+        <div className="flex gap-4 justify-center flex-wrap">
+          <Button asChild>
+            <Link href="/projects">View Projects</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/resume">Download Resume</Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href="/contact">Contact</Link>
+          </Button>
+        </div>
+
+        {/* Social Links */}
+        <div className="flex gap-4 justify-center mt-8">
+          <Button variant="ghost" size="icon" asChild>
+            <a href={profile.social.github} target="_blank" rel="noopener noreferrer">
+              <Github className="h-5 w-5" />
+            </a>
+          </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <a href={profile.social.linkedin} target="_blank" rel="noopener noreferrer">
+              <Linkedin className="h-5 w-5" />
+            </a>
+          </Button>
+          <Button variant="ghost" size="icon" asChild>
+            <a href={`mailto:${profile.email}`}>
+              <Mail className="h-5 w-5" />
+            </a>
+          </Button>
         </div>
       </section>
 
-      {/* Project Highlights */}
+      {/* Signature Projects */}
       <section className="max-w-6xl mx-auto mb-20">
-        <h2 className="text-3xl font-semibold text-center mb-12">Featured Work</h2>
+        <h2 className="text-3xl font-semibold text-center mb-12">Signature Projects</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {/* Placeholder project cards */}
-          {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-card text-card-foreground rounded-lg border overflow-hidden hover:shadow-lg transition-shadow">
+          {featuredProjects.map((project) => (
+            <Card key={project.slug} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
-                <span className="text-primary font-medium">Project {i} Screenshot</span>
+                <span className="text-primary font-medium">{project.title}</span>
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-semibold mb-2">Featured Project {i}</h3>
-                <p className="text-muted-foreground mb-4">
-                  Description of this amazing project that showcases modern web development.
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <span className="px-2 py-1 text-xs bg-secondary rounded-full">Next.js</span>
-                  <span className="px-2 py-1 text-xs bg-secondary rounded-full">TypeScript</span>
-                  <span className="px-2 py-1 text-xs bg-secondary rounded-full">Tailwind</span>
+              <CardHeader>
+                <CardTitle className="text-xl">{project.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground mb-4">{project.summary}</p>
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {project.tags.slice(0, 3).map((tag: string) => (
+                    <Badge key={tag} variant="secondary" className="text-xs">
+                      {tag}
+                    </Badge>
+                  ))}
                 </div>
-              </div>
-            </div>
+                <div className="flex gap-2">
+                  {project.links.live && (
+                    <Button size="sm" asChild>
+                      <a href={project.links.live} target="_blank" rel="noopener noreferrer">
+                        <ExternalLink className="h-3 w-3 mr-1" />
+                        Live
+                      </a>
+                    </Button>
+                  )}
+                  {project.links.repo && (
+                    <Button size="sm" variant="outline" asChild>
+                      <a href={project.links.repo} target="_blank" rel="noopener noreferrer">
+                        <Github className="h-3 w-3 mr-1" />
+                        Code
+                      </a>
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
           ))}
         </div>
         
         <div className="text-center mt-12">
-          <a 
-            href="/projects"
-            className="inline-flex items-center text-primary hover:text-primary/80 font-medium"
-          >
-            View All Projects
-            <svg className="ml-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
-          </a>
+          <Button variant="outline" asChild>
+            <Link href="/projects">
+              View All Projects
+              <ExternalLink className="ml-2 h-4 w-4" />
+            </Link>
+          </Button>
         </div>
       </section>
 
-      {/* Quick About */}
-      <section className="grid md:grid-cols-2 gap-12 max-w-6xl mx-auto">
-        <div>
-          <h2 className="text-3xl font-semibold mb-4">Welcome!</h2>
-          <p className="text-muted-foreground leading-relaxed">
-            I'm a passionate full-stack developer who loves creating efficient, 
-            user-friendly applications. From hospitality to code, I bring a unique 
-            perspective to software development with a focus on real-world solutions.
-          </p>
-        </div>
-        
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold">Quick Facts</h3>
-          <ul className="space-y-2 text-muted-foreground">
-            <li>🚀 Specialized in Next.js, React, and Node.js</li>
-            <li>🔐 Focused on secure, scalable applications</li>
-            <li>📱 Full-stack development from UI to database</li>
-            <li>🎯 Always learning and adapting to new technologies</li>
-          </ul>
+      {/* What I Build */}
+      <section className="max-w-4xl mx-auto">
+        <h2 className="text-3xl font-semibold text-center mb-8">What I Build</h2>
+        <div className="grid md:grid-cols-2 gap-8">
+          {profile.about.whatIBuild.map((item: string, index: number) => (
+            <div key={index} className="flex items-start space-x-4">
+              <div className="flex-shrink-0 w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                <span className="text-primary font-semibold text-sm">{index + 1}</span>
+              </div>
+              <p className="text-muted-foreground">{item}</p>
+            </div>
+          ))}
         </div>
       </section>
     </div>

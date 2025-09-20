@@ -1,11 +1,31 @@
-import { Mail, MapPin, Phone, Send } from 'lucide-react'
+import { getProfile } from '@/lib/content'
+import { generateSiteMetadata } from '@/lib/seo'
+import { Button, Input, Textarea } from '@portfolio/ui'
+import { Mail, MapPin, Phone, Send, Github, Linkedin } from 'lucide-react'
 
-export const metadata = {
-  title: 'Contact - Your Name',
-  description: 'Get in touch with me for project collaborations, job opportunities, or just to say hello.',
-}
+export const metadata = generateSiteMetadata(
+  'Contact',
+  'Get in touch with me for project collaborations, job opportunities, or just to say hello.',
+  '/contact'
+)
 
 export default function ContactPage() {
+  const profile = getProfile()
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    const form = e.target as HTMLFormElement
+    const formData = new FormData(form)
+    
+    const subject = formData.get('subject') as string
+    const message = formData.get('message') as string
+    const email = formData.get('email') as string
+    const name = `${formData.get('firstName')} ${formData.get('lastName')}`
+    
+    const mailtoUrl = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`From: ${name} (${email})\n\nMessage:\n${message}`)}`
+    window.location.href = mailtoUrl
+  }
+
   return (
     <div className="container mx-auto px-4 py-16">
       {/* Header */}
@@ -37,10 +57,10 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold">Email</h3>
                 <a 
-                  href="mailto:hello@yourname.com"
+                  href={`mailto:${profile.email}`}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  hello@yourname.com
+                  {profile.email}
                 </a>
               </div>
             </div>
@@ -52,10 +72,10 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold">Phone</h3>
                 <a 
-                  href="tel:+1234567890"
+                  href={`tel:${profile.phone}`}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  +1 (234) 567-8900
+                  {profile.phone}
                 </a>
               </div>
             </div>
@@ -66,8 +86,25 @@ export default function ContactPage() {
               </div>
               <div>
                 <h3 className="font-semibold">Location</h3>
-                <p className="text-muted-foreground">San Francisco, CA</p>
+                <p className="text-muted-foreground">{profile.location}</p>
               </div>
+            </div>
+          </div>
+
+          {/* Social Links */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Find me online</h3>
+            <div className="flex gap-4">
+              <Button variant="outline" size="icon" asChild>
+                <a href={profile.social.github} target="_blank" rel="noopener noreferrer">
+                  <Github className="h-4 w-4" />
+                </a>
+              </Button>
+              <Button variant="outline" size="icon" asChild>
+                <a href={profile.social.linkedin} target="_blank" rel="noopener noreferrer">
+                  <Linkedin className="h-4 w-4" />
+                </a>
+              </Button>
             </div>
           </div>
 
