@@ -8,6 +8,7 @@
     "./typescript/*": "./typescript/*"
   },
   "scripts": {
+    "build": "echo 'Config package - no build needed'",
     "lint": "eslint . --max-warnings 0",
     "type-check": "tsc --noEmit"
   },
