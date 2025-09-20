@@ -1,4 +1,4 @@
-import { Github, Linkedin, Twitter, Mail } from 'lucide-react'
+import { Github, Linkedin, Mail } from 'lucide-react'
 
 export function Footer() {
   const currentYear = new Date().getFullYear()
@@ -8,12 +8,12 @@ export function Footer() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
           <div className="text-sm text-muted-foreground">
-            © {currentYear} Your Name. All rights reserved.
+            © {currentYear} Suryadi Zhang. All rights reserved.
           </div>
           
           <div className="flex items-center space-x-4">
             <a 
-              href="https://github.com/yourusername" 
+              href="https://github.com/suryadizhang" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -22,7 +22,7 @@ export function Footer() {
               <span className="sr-only">GitHub</span>
             </a>
             <a 
-              href="https://linkedin.com/in/yourusername" 
+              href="https://www.linkedin.com/in/suryadi-zhang/" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-muted-foreground hover:text-primary transition-colors"
@@ -31,16 +31,7 @@ export function Footer() {
               <span className="sr-only">LinkedIn</span>
             </a>
             <a 
-              href="https://twitter.com/yourusername" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Twitter className="h-5 w-5" />
-              <span className="sr-only">Twitter</span>
-            </a>
-            <a 
-              href="mailto:your.email@example.com"
+              href="mailto:suryadizhang86@gmail.com"
               className="text-muted-foreground hover:text-primary transition-colors"
             >
               <Mail className="h-5 w-5" />

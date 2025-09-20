@@ -1,4 +1,4 @@
-import { getAllProjects } from '@/lib/content'
+import { getAllProjects, type ProjectFrontmatter } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
 import { Badge, Button } from '@portfolio/ui'
 import { ExternalLink, Github } from 'lucide-react'
@@ -28,7 +28,7 @@ export default function ProjectsPage() {
       {/* All Projects */}
       <section>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {projects.map((project) => (
+          {projects.map((project: ProjectFrontmatter) => (
             <div
               key={project.slug}
               className="bg-card text-card-foreground rounded-lg border overflow-hidden hover:shadow-lg transition-shadow group"

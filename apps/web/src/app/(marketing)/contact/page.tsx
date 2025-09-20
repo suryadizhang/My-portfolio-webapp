@@ -1,4 +1,4 @@
-import { getProfile } from '@/lib/content'
+import { getProfile, type Profile } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
 import { Button, Input, Textarea } from '@portfolio/ui'
 import { Mail, MapPin, Phone, Send, Github, Linkedin } from 'lucide-react'

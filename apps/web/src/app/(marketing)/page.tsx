@@ -1,4 +1,4 @@
-import { getProfile, getFeaturedProjects } from '@/lib/content'
+import { getProfile, getFeaturedProjects, type ProjectFrontmatter } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfolio/ui'
 import { ExternalLink, Github, Linkedin, Mail } from 'lucide-react'
@@ -64,7 +64,7 @@ export default function HomePage() {
       <section className="max-w-6xl mx-auto mb-20">
         <h2 className="text-3xl font-semibold text-center mb-12">Signature Projects</h2>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {featuredProjects.map((project) => (
+          {featuredProjects.map((project: ProjectFrontmatter) => (
             <Card key={project.slug} className="overflow-hidden hover:shadow-lg transition-shadow">
               <div className="h-48 bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center">
                 <span className="text-primary font-medium">{project.title}</span>

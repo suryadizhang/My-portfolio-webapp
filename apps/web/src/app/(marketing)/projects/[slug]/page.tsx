@@ -1,4 +1,4 @@
-import { getAllProjects, getProjectBySlug } from '@/lib/content'
+import { getAllProjects, getProjectBySlug, type ProjectFrontmatter } from '@/lib/content'
 import { generateSiteMetadata, generateProjectJsonLd } from '@/lib/seo'
 import { Badge, Button } from '@portfolio/ui'
 import { MDXRemote } from 'next-mdx-remote/rsc'
@@ -15,7 +15,7 @@ interface ProjectPageProps {
 
 export async function generateStaticParams() {
   const projects = getAllProjects()
-  return projects.map((project) => ({
+  return projects.map((project: ProjectFrontmatter) => ({
     slug: project.slug,
   }))
 }

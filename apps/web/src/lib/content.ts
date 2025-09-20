@@ -65,7 +65,7 @@ export interface Project {
   content: string
 }
 
-const contentDir = path.join(process.cwd(), 'content')
+const contentDir = path.join(process.cwd(), 'src/content')
 const projectsDir = path.join(contentDir, 'projects')
 
 // Load profile data

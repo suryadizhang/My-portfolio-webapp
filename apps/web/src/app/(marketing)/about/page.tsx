@@ -1,4 +1,4 @@
-import { getProfile } from '@/lib/content'
+import { getProfile, type Profile } from '@/lib/content'
 import { generateSiteMetadata, generatePersonJsonLd } from '@/lib/seo'
 import { Badge, Button } from '@portfolio/ui'
 import { Calendar, MapPin, BookOpen, Award, Code2 } from 'lucide-react'
@@ -201,5 +201,6 @@ export default function AboutPage() {
         </div>
       </section>
     </div>
+  </>
   )
 }
