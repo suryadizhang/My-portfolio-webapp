@@ -8,6 +8,17 @@ const nextConfig = {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
   },
   
+  // ESLint configuration
+  eslint: {
+    ignoreDuringBuilds: process.env.SKIP_LINT === 'true',
+  },
+  
+  // TypeScript configuration  
+  typescript: {
+    ignoreBuildErrors: false,
+    tsconfigPath: 'tsconfig.json',
+  },
+  
   // Security headers
   async headers() {
     return [
