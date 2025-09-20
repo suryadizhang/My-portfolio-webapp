@@ -8,9 +8,22 @@ import { Footer } from '../components/footer'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Your Name - Full-Stack Developer',
-  description: 'Full-Stack Engineer building secure booking apps & AI-powered tools.',
+  title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
+  description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+  keywords: ['Software Engineer', 'Full-Stack Developer', 'React', 'Next.js', 'TypeScript', 'Python', 'FastAPI', 'Postgres'],
+  authors: [{ name: 'Suryadi Zhang' }],
+  openGraph: {
+    title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
+    description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
+    description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
+  },
 }
 
 export default function RootLayout({
