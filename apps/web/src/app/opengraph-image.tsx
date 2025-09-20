@@ -1,5 +1,12 @@
-import { getProfile } from '@/lib/content'
 import { ImageResponse } from 'next/og'
+
+// Static profile data for OpenGraph (to avoid filesystem operations in edge runtime)
+const staticProfile = {
+  name: 'Suryadi Zhang',
+  title: 'Full-Stack Software Engineer',
+  tagline: 'Building scalable web applications with modern technologies',
+  location: 'San Jose, CA'
+}
 
 export const runtime = 'edge'
 export const alt = 'Suryadi Zhang - Full-Stack Software Engineer'
@@ -10,8 +17,6 @@ export const size = {
 export const contentType = 'image/png'
 
 export default async function Image() {
-  const profile = getProfile()
-
   return new ImageResponse(
     (
       <div
@@ -47,7 +52,7 @@ export default async function Image() {
               color: 'transparent',
             }}
           >
-            {profile.name}
+            {staticProfile.name}
           </h1>
           <p
             style={{
@@ -56,7 +61,7 @@ export default async function Image() {
               opacity: 0.9,
             }}
           >
-            {profile.title}
+            {staticProfile.title}
           </p>
           <p
             style={{
@@ -65,7 +70,7 @@ export default async function Image() {
               opacity: 0.8,
             }}
           >
-            {profile.tagline}
+            {staticProfile.tagline}
           </p>
           <p
             style={{
@@ -74,7 +79,7 @@ export default async function Image() {
               opacity: 0.7,
             }}
           >
-            📍 {profile.location}
+            📍 {staticProfile.location}
           </p>
         </div>
       </div>
