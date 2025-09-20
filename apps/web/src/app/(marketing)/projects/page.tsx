@@ -1,8 +1,8 @@
 import { getAllProjects, type ProjectFrontmatter } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
+import { ProjectImage } from '@/components/project-image'
 import { Badge, Button } from '@portfolio/ui'
 import { ExternalLink, Github } from 'lucide-react'
-import Image from 'next/image'
 import Link from 'next/link'
 
 export const metadata = generateSiteMetadata(
@@ -33,22 +33,11 @@ export default function ProjectsPage() {
               key={project.slug}
               className="bg-card text-card-foreground rounded-lg border overflow-hidden hover:shadow-lg transition-shadow group"
             >
-              <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary/40">
-                <Image
-                  src={project.cover}
-                  alt={project.title}
-                  fill
-                  className="object-cover"
-                  onError={(e) => {
-                    // Fallback to placeholder if image fails to load
-                    const target = e.target as HTMLImageElement
-                    target.style.display = 'none'
-                  }}
-                />
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-primary font-medium opacity-50">{project.title}</span>
-                </div>
-              </div>
+              <ProjectImage
+                src={project.cover}
+                alt={project.title}
+                title={project.title}
+              />
               
               <div className="p-6">
                 <div className="flex items-start justify-between mb-2">

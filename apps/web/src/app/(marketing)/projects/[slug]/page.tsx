@@ -1,10 +1,10 @@
 import { getAllProjects, getProjectBySlug, type ProjectFrontmatter } from '@/lib/content'
 import { generateSiteMetadata, generateProjectJsonLd } from '@/lib/seo'
+import { ProjectImage } from '@/components/project-image'
 import { Badge, Button } from '@portfolio/ui'
 import { MDXRemote } from 'next-mdx-remote/rsc'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
-import Image from 'next/image'
 import { ArrowLeft, ExternalLink, Github, Heart, Eye } from 'lucide-react'
 
 interface ProjectPageProps {
@@ -84,16 +84,12 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             </div>
 
             {/* Project cover image */}
-            <div className="relative aspect-video mb-12 rounded-lg overflow-hidden">
-              <Image
+            <div className="mb-12">
+              <ProjectImage
                 src={frontmatter.cover}
                 alt={frontmatter.title}
-                fill
-                className="object-cover"
-                onError={(e) => {
-                  const target = e.target as HTMLImageElement
-                  target.style.display = 'none'
-                }}
+                title={frontmatter.title}
+                className="rounded-lg overflow-hidden aspect-video"
               />
             </div>
 
