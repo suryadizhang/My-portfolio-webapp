@@ -4,8 +4,8 @@ A comprehensive, recruiter-friendly portfolio website featuring **Next.js 15**, 
 
 ## 🌐 Live Application
 
-- **Frontend**: [https://suryadi-portfolio.vercel.app](https://suryadi-portfolio.vercel.app)
-- **Backend API**: [https://api.suryadi.dev](https://api.suryadi.dev) *(API documentation at `/docs`)*
+- **Production Site**: [https://myportfolio.mysticdatanode.net](https://myportfolio.mysticdatanode.net)
+- **Backend API**: [https://myportfolio.mysticdatanode.net/api](https://myportfolio.mysticdatanode.net/api)
 - **Analytics Dashboard**: Built-in engagement tracking
 - **AI Chat**: Interactive assistant powered by RAG (Retrieval-Augmented Generation)
 

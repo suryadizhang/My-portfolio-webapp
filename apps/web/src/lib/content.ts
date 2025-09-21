@@ -6,30 +6,21 @@ import matter from 'gray-matter'
 export interface Profile {
   name: string
   pronouns: string
-  title: string
-  tagline: string
+  headline: string
   location: string
-  email: string
-  phone: string
-  social: {
-    linkedin: string
+  contact: {
+    email: string
+    website: string
     github: string
-    portfolio: string
+    linkedin: string
   }
-  about: {
-    summary: string
-    howIWork: string[]
-    impact: string[]
-    whatIBuild: string[]
-  }
-  skillsPrimary: string[]
-  hobbies: string[]
+  summary: string
   experience: Array<{
-    role: string
+    title: string
     company: string
+    type?: string
     dates: string
-    location: string
-    bullets: string[]
+    highlights: string[]
   }>
   education: Array<{
     school: string
@@ -37,30 +28,45 @@ export interface Profile {
     dates: string
     notes: string
   }>
-  certs: Array<{
+  certifications: Array<{
     name: string
     issuer: string
+    date: string
     id: string
-    issued: string
   }>
+  skills: string[]
+  hobbies: string[]
+  availability: string[]
 }
 
 // Project types
 export interface ProjectFrontmatter {
   title: string
+  slug: string
   description?: string
-  tech?: string[]
+  longDescription?: string
+  tags?: string[]
   category?: string
+  timeline?: string
+  status?: string
   featured?: boolean
+  priority?: number
+  repository?: string
+  liveUrl?: string
+  image?: string
+  gallery?: string[]
+  tech?: Array<{
+    name: string
+    category: string
+  }>
+  // Legacy fields for backward compatibility
   live?: string
   source?: string
-  cover: string
+  cover?: string
   date?: string
-  slug: string
-  year: number
-  summary: string
-  tags: string[]
-  links: {
+  year?: number
+  summary?: string
+  links?: {
     live?: string
     repo?: string
     demo?: string
@@ -104,7 +110,7 @@ export function getAllProjects(): ProjectFrontmatter[] {
       
       return data as ProjectFrontmatter
     })
-    .sort((a, b) => b.year - a.year) // Sort by year descending
+    .sort((a, b) => (b.priority || 0) - (a.priority || 0) || (b.year || 0) - (a.year || 0)) // Sort by priority first, then year
   
   return projects
 }

@@ -22,7 +22,7 @@ export default function ContactPage() {
     const email = formData.get('email') as string
     const name = `${formData.get('firstName')} ${formData.get('lastName')}`
     
-    const mailtoUrl = `mailto:${profile.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`From: ${name} (${email})\n\nMessage:\n${message}`)}`
+    const mailtoUrl = `mailto:${profile.contact.email}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(`From: ${name} (${email})\n\nMessage:\n${message}`)}`
     window.location.href = mailtoUrl
   }
 
@@ -57,10 +57,10 @@ export default function ContactPage() {
               <div>
                 <h3 className="font-semibold">Email</h3>
                 <a 
-                  href={`mailto:${profile.email}`}
+                  href={`mailto:${profile.contact.email}`}
                   className="text-muted-foreground hover:text-primary transition-colors"
                 >
-                  {profile.email}
+                  {profile.contact.email}
                 </a>
               </div>
             </div>
@@ -71,12 +71,9 @@ export default function ContactPage() {
               </div>
               <div>
                 <h3 className="font-semibold">Phone</h3>
-                <a 
-                  href={`tel:${profile.phone}`}
-                  className="text-muted-foreground hover:text-primary transition-colors"
-                >
-                  {profile.phone}
-                </a>
+                <span className="text-muted-foreground">
+                  Available upon request
+                </span>
               </div>
             </div>
 
@@ -96,12 +93,12 @@ export default function ContactPage() {
             <h3 className="font-semibold">Find me online</h3>
             <div className="flex gap-4">
               <Button variant="outline" size="icon" asChild>
-                <a href={profile.social.github} target="_blank" rel="noopener noreferrer">
+                <a href={profile.contact.github} target="_blank" rel="noopener noreferrer">
                   <Github className="h-4 w-4" />
                 </a>
               </Button>
               <Button variant="outline" size="icon" asChild>
-                <a href={profile.social.linkedin} target="_blank" rel="noopener noreferrer">
+                <a href={profile.contact.linkedin} target="_blank" rel="noopener noreferrer">
                   <Linkedin className="h-4 w-4" />
                 </a>
               </Button>

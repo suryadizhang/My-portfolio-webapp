@@ -202,7 +202,7 @@ export function ChatPanel({ onNewMessage }: ChatPanelProps) {
           <Input
             ref={inputRef}
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
             placeholder="Ask about Suryadi's work..."
             disabled={isLoading}

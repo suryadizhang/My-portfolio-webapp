@@ -1,71 +1,44 @@
 {
   "name": "Suryadi Zhang",
   "pronouns": "He/Him",
-  "title": "Software Engineer (Full-Stack) · React & Python",
-  "tagline": "Next.js, FastAPI, Postgres · Shipped live booking + admin · CI/CD",
-  "location": "Fremont, CA, USA",
-  "email": "suryadizhang86@gmail.com",
-  "phone": "(210) 388-4155",
-  "social": {
-    "linkedin": "https://www.linkedin.com/in/suryadi-zhang/",
+  "headline": "Software Engineer (Full-Stack) | React & Python | Next.js, FastAPI, Postgres | Shipped live booking + admin | CI/CD",
+  "location": "Fremont, California, United States",
+  "contact": {
+    "email": "suryadizhang86@gmail.com",
+    "website": "https://myportfolio.mysticdatanode.net",
     "github": "https://github.com/suryadizhang",
-    "portfolio": "https://github.com/suryadizhang/My-portfolio-webapp"
+    "linkedin": "https://www.linkedin.com/in/suryadi-zhang/"
   },
-  "about": {
-    "summary": "Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres. I turn ambiguous requirements into production-ready systems that ship continuously with CI/CD.",
-    "howIWork": [
-      "Model data and design REST APIs with auth, pagination, and clear errors, documented with OpenAPI",
-      "Build responsive React/Next.js UIs that perform well on mobile and are accessible by default",
-      "Add guardrails with validation (Pydantic/Zod), rate limiting, logging/metrics, and automated tests",
-      "Ship safely with GitHub Actions (lint, unit/integration tests, preview deploys)"
-    ],
-    "impact": [
-      "Shipped a live booking platform + admin (Next.js/TypeScript + FastAPI/Postgres) deployed on Vercel + VPS → enabled role-based access, secure auth, rate limiting, and automated deployments",
-      "Increased deployment frequency by ~30% by introducing CI/CD pipelines → fewer regressions and faster delivery",
-      "Reduced setup time by ~15% in event operations with SOPs and automation → applied same discipline in engineering"
-    ],
-    "whatIBuild": [
-      "Mobile-first booking & e-commerce flows",
-      "Well-documented APIs with strong auth and predictable error models",
-      "Admin dashboards that reduce manual work",
-      "CI/CD pipelines for confident daily releases"
-    ]
-  },
-  "skillsPrimary": ["TypeScript","JavaScript","Python","React","Next.js","FastAPI","Flask","Postgres","SQLAlchemy","Tailwind CSS","GitHub Actions","Vercel","OpenAPI/Swagger","MySQL","Express","Postman/Insomnia","CORS","OWASP basics"],
-  "hobbies": ["Hibachi cooking","Hiking","Basketball","Music","Exploring new frameworks"],
+  "summary": "I'm a Full-Stack Software Engineer with real-world experience delivering responsive web apps and robust APIs using React, Next.js, Python, FastAPI, and Postgres. I turn ambiguous requirements into production-ready systems and ship continuously with CI/CD.\n\n🚀 How I Work\n• Model data and design REST APIs with auth, pagination, and clear errors, documented with OpenAPI\n• Build responsive React/Next.js UIs that perform well on mobile and are accessible by default\n• Add guardrails with validation (Pydantic/Zod), rate limiting, logging/metrics, and automated tests\n• Ship safely with GitHub Actions (lint, unit/integration tests, preview deploys)\n\n💡 Impact & Highlights\n• Shipped a live booking platform + admin (Next.js/TypeScript + FastAPI/Postgres) deployed on Vercel + VPS → role-based access, secure auth, rate limiting, automated deployments\n• Increased deployment frequency by ~30% with GitHub Actions pipelines → fewer regressions, faster delivery\n• Reduced setup time in event operations by ~15% by designing SOPs and automation\n\n🛠️ What I Build\n• Booking/e-commerce flows that feel effortless on mobile\n• Well-documented APIs with strong auth and predictable error models\n• Admin dashboards with insights, bulk actions, and guardrails\n• CI/CD pipelines for confident daily releases\n• Systems that respect users — secure, performant, reliable\n\n🔑 Core Stack & Keywords\nTypeScript/JavaScript, Python, React, Next.js, FastAPI, Flask, Postgres, SQLAlchemy, Tailwind CSS, GitHub Actions, Vercel, OpenAPI/Swagger, MySQL, Express, Postman/Insomnia, Render/Netlify, CORS, OWASP basics\n\nOutside of coding: experimenting with hibachi recipes, hiking, cooking, basketball, and exploring new frameworks. I thrive in environments where curiosity, collaboration, and shipping real value come first.",
   "experience": [
     {
-      "role": "Founder & Software Lead",
+      "title": "Founder & Software Lead",
       "company": "My Hibachi LLC",
+      "type": "Part-time",
       "dates": "Jun 2025 – Present",
-      "location": "Hybrid",
-      "bullets": [
-        "Shipped Next.js/Tailwind frontend (Vercel) + FastAPI/Postgres backend (VPS) for live booking + admin → 100% self-serve bookings",
-        "Implemented rate limiting, caching, schema validation → reduced user-visible errors by ~25%",
-        "Automated CI/CD with GitHub Actions → cut release time by ~40% and enabled daily deployments",
-        "Structured repos, environments, and PR checks → onboarded contributors smoothly"
+      "highlights": [
+        "Shipped Next.js/Tailwind (Vercel) + FastAPI/Postgres (VPS) live booking + admin",
+        "Implemented rate limiting, caching, schema validation; improved reliability",
+        "Automated CI/CD with GitHub Actions; structured repos & PR checks"
       ]
     },
     {
-      "role": "Full Stack Engineer (Apprenticeship)",
+      "title": "Full Stack Engineer (Apprenticeship)",
       "company": "Coding Temple",
       "dates": "Mar 2025 – Present",
-      "location": "Remote",
-      "bullets": [
-        "Built user-facing features in Next.js/React + FastAPI/Flask → improved responsiveness and reduced page load ~20%",
-        "Authored REST endpoints with validation & OpenAPI → clearer integration and faster onboarding",
-        "Added CI pipelines with Postgres service → improved merge reliability by ~35%",
-        "Delivered a capstone app (auth + CRUD + responsive UI) with documented setup"
+      "highlights": [
+        "Built features in Next.js/React + FastAPI/Flask; improved responsiveness",
+        "REST endpoints with validation & OpenAPI; CI with Postgres service",
+        "Capstone app with auth + CRUD + responsive UI, documented setup"
       ]
     },
     {
-      "role": "Additional Experience — Hospitality & Culinary",
+      "title": "Additional Experience — Hospitality & Culinary",
       "company": "Multiple Restaurants & Freelance",
       "dates": "Aug 2018 – Jun 2025",
-      "location": "US · Hybrid",
-      "bullets": [
-        "Coordinated 100+ events; created SOPs reducing setup errors by ~15%",
-        "Mentored 10+ staff; honed leadership, communication, and teamwork"
+      "highlights": [
+        "Coordinated 100+ events; SOPs/checklists cut setup errors",
+        "Mentored 10+ staff; honed leadership, communication, teamwork"
       ]
     }
   ],
@@ -74,17 +47,44 @@
       "school": "Coding Temple",
       "program": "Full-Stack Software Engineering",
       "dates": "Mar 2025 – Sep 2025",
-      "notes": "Certificate of Completion; capstone booking platform with role-based access, secure auth, CI/CD"
+      "notes": "Certificate of Completion; capstone booking platform (Next.js + FastAPI/Postgres)"
     },
     {
       "school": "Universitas Surabaya",
-      "program": "Economics (Some College, no degree)",
-      "dates": "Sep 2005",
-      "notes": "Coursework in Micro/Macroeconomics and Statistics; foundations for data analysis"
+      "program": "Economics (Some College, No Degree)",
+      "notes": "Micro/Macroeconomics, Statistics; analytical and quantitative foundations"
     }
   ],
-  "certs": [
-    {"name":"Backend Specialist","issuer":"Coding Temple","id":"161097302","issued":"Sep 2025"},
-    {"name":"Software Engineering: Certificate of Completion","issuer":"Coding Temple","id":"161097303","issued":"Sep 2025"}
-  ]
+  "certifications": [
+    {
+      "name": "Backend Specialist",
+      "issuer": "Coding Temple",
+      "date": "Sep 2025",
+      "id": "161097302"
+    },
+    {
+      "name": "Software Engineering: Certificate of Completion",
+      "issuer": "Coding Temple",
+      "date": "Sep 2025",
+      "id": "161097303"
+    }
+  ],
+  "skills": [
+    "Full-Stack Development",
+    "React.js",
+    "Next.js",
+    "Python",
+    "FastAPI",
+    "Flask",
+    "Postgres",
+    "SQLAlchemy",
+    "TypeScript",
+    "Tailwind CSS",
+    "CI/CD",
+    "GitHub Actions",
+    "OpenAPI/Swagger",
+    "Testing (Pytest, Vitest)"
+  ],
+  "hobbies": ["Hiking", "Cooking (Hibachi)", "Basketball"],
+  "availability": ["Software Engineer", "Full-Stack Engineer", "Back End Engineer"]
 }

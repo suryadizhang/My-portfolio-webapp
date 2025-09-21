@@ -1,0 +1,21 @@
+{
+  "name": "Suryadi Zhang - Full-Stack Developer Portfolio",
+  "short_name": "Suryadi Portfolio",
+  "description": "Professional portfolio of Suryadi Zhang, Full-Stack Software Engineer specializing in React, Next.js, Python, and FastAPI",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#0066cc",
+  "orientation": "portrait-primary",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "48x48",
+      "type": "image/x-icon"
+    }
+  ],
+  "categories": ["business", "productivity", "portfolio"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

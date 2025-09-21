@@ -18,13 +18,13 @@ export default function ResumePage() {
       <div className="text-center mb-12">
         <h1 className="text-4xl font-bold mb-4">Resume</h1>
         <p className="text-xl text-muted-foreground mb-8">
-          {profile.about.summary}
+          {profile.summary.split('\n\n')[0]}
         </p>
         
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild>
-            <a href={`mailto:${profile.email}?subject=Resume Request`}>
+            <a href={`mailto:${profile.contact.email}?subject=Resume Request`}>
               <Mail className="h-4 w-4 mr-2" />
               Email me for resume
             </a>
@@ -60,7 +60,7 @@ export default function ResumePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Professional Summary</h2>
             <p className="text-muted-foreground">
-              {profile.about.summary}
+              {profile.summary.split('\n\n')[0]}
             </p>
             <div className="space-y-2">
               <div className="flex items-center gap-2 text-sm">
@@ -78,7 +78,7 @@ export default function ResumePage() {
           <div className="space-y-4">
             <h2 className="text-2xl font-bold">Key Skills</h2>
             <div className="flex flex-wrap gap-2">
-              {profile.skillsPrimary.slice(0, 12).map((skill: string) => (
+              {profile.skills.slice(0, 12).map((skill: string) => (
                 <Badge key={skill} variant="secondary" className="text-xs">
                   {skill}
                 </Badge>
@@ -99,13 +99,13 @@ export default function ResumePage() {
                 </div>
                 <div className="space-y-2">
                   <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                    <h3 className="text-xl font-semibold">{exp.role}</h3>
+                    <h3 className="text-xl font-semibold">{exp.title}</h3>
                     <span className="text-sm text-muted-foreground">{exp.dates}</span>
                   </div>
-                  <p className="text-primary font-medium">{exp.company} • {exp.location}</p>
+                  <p className="text-primary font-medium">{exp.company} {exp.type && `• ${exp.type}`}</p>
                   <ul className="text-muted-foreground space-y-1 text-sm">
-                    {exp.bullets.map((bullet: string, bulletIndex: number) => (
-                      <li key={bulletIndex}>• {bullet}</li>
+                    {exp.highlights.map((highlight: string, highlightIndex: number) => (
+                      <li key={highlightIndex}>• {highlight}</li>
                     ))}
                   </ul>
                 </div>
@@ -132,11 +132,11 @@ export default function ResumePage() {
           <div>
             <h2 className="text-2xl font-bold mb-6">Certifications</h2>
             <div className="space-y-4">
-              {profile.certs.map((cert: any, index: number) => (
+              {profile.certifications.map((cert: any, index: number) => (
                 <div key={index} className="space-y-1">
                   <h3 className="font-semibold">{cert.name}</h3>
                   <p className="text-sm text-primary">{cert.issuer}</p>
-                  <p className="text-xs text-muted-foreground">{cert.issued}</p>
+                  <p className="text-xs text-muted-foreground">{cert.date}</p>
                 </div>
               ))}
             </div>
@@ -150,7 +150,7 @@ export default function ResumePage() {
             Email me to receive the full PDF version with detailed work history, education, and project details.
           </p>
           <Button asChild>
-            <a href={`mailto:${profile.email}?subject=Resume Request&body=Hi ${profile.name}, I'd like to request a copy of your resume.`}>
+            <a href={`mailto:${profile.contact.email}?subject=Resume Request&body=Hi ${profile.name}, I'd like to request a copy of your resume.`}>
               <Mail className="h-4 w-4 mr-2" />
               Request Full Resume
             </a>

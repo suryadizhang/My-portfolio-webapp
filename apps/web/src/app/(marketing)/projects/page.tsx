@@ -52,11 +52,11 @@ export default function ProjectsPage() {
                 </p>
                 
                 <div className="flex flex-wrap gap-2 mb-4">
-                  {project.tags.map((tag: string) => (
+                  {project.tags?.map((tag: string) => (
                     <Badge key={tag} variant="secondary" className="text-xs">
                       {tag}
                     </Badge>
-                  ))}
+                  )) || []}
                 </div>
                 
                 <div className="flex gap-2">
@@ -65,17 +65,17 @@ export default function ProjectsPage() {
                       View Details
                     </Link>
                   </Button>
-                  {project.links.live && (
+                  {(project.links?.live || project.liveUrl) && (
                     <Button size="sm" variant="outline" asChild>
-                      <a href={project.links.live} target="_blank" rel="noopener noreferrer">
+                      <a href={project.links?.live || project.liveUrl} target="_blank" rel="noopener noreferrer">
                         <ExternalLink className="h-3 w-3 mr-1" />
                         Live
                       </a>
                     </Button>
                   )}
-                  {project.links.repo && (
+                  {(project.links?.repo || project.repository) && (
                     <Button size="sm" variant="outline" asChild>
-                      <a href={project.links.repo} target="_blank" rel="noopener noreferrer">
+                      <a href={project.links?.repo || project.repository} target="_blank" rel="noopener noreferrer">
                         <Github className="h-3 w-3 mr-1" />
                         Code
                       </a>

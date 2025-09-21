@@ -75,11 +75,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             {/* Project header */}
             <div className="mb-12">
               <div className="flex flex-wrap gap-2 mb-4">
-                {frontmatter.tags.map((tag: string) => (
-                  <Badge key={tag} variant="secondary">
+                {frontmatter.tags?.map((tag: string) => (
+                  <Badge key={tag} variant="secondary" className="">
                     {tag}
                   </Badge>
-                ))}
+                )) || []}
               </div>
               
               <h1 className="text-4xl font-bold mb-4">{frontmatter.title}</h1>
@@ -89,7 +89,7 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
             {/* Project cover image */}
             <div className="mb-12">
               <ProjectImage
-                src={frontmatter.cover}
+                src={frontmatter.cover || frontmatter.image}
                 alt={frontmatter.title}
                 title={frontmatter.title}
                 className="rounded-lg overflow-hidden aspect-video"
@@ -123,11 +123,11 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
                   <div>
                     <span className="text-muted-foreground">Technologies:</span>
                     <div className="flex flex-wrap gap-1 mt-1">
-                      {frontmatter.tags.map((tag: string) => (
+                      {frontmatter.tags?.map((tag: string) => (
                         <Badge key={tag} variant="outline" className="text-xs">
                           {tag}
                         </Badge>
-                      ))}
+                      )) || []}
                     </div>
                   </div>
                 </div>
@@ -135,17 +135,17 @@ export default async function ProjectPage({ params }: ProjectPageProps) {
 
               {/* Links */}
               <div className="space-y-3">
-                {frontmatter.links.live && (
+                {(frontmatter.links?.live || frontmatter.liveUrl) && (
                   <Button className="w-full" asChild>
-                    <a href={frontmatter.links.live} target="_blank" rel="noopener noreferrer">
+                    <a href={frontmatter.links?.live || frontmatter.liveUrl} target="_blank" rel="noopener noreferrer">
                       <ExternalLink className="h-4 w-4 mr-2" />
                       View Live
                     </a>
                   </Button>
                 )}
-                {frontmatter.links.repo && (
+                {(frontmatter.links?.repo || frontmatter.repository) && (
                   <Button variant="outline" className="w-full" asChild>
-                    <a href={frontmatter.links.repo} target="_blank" rel="noopener noreferrer">
+                    <a href={frontmatter.links?.repo || frontmatter.repository} target="_blank" rel="noopener noreferrer">
                       <Github className="h-4 w-4 mr-2" />
                       View Source
                     </a>
