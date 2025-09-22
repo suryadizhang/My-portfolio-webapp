@@ -16,8 +16,8 @@ COPY packages/utils packages/utils
 COPY packages/config packages/config
 
 # Install dependencies reproducibly for the whole workspace
-# Disable husky during CI/Docker builds since git hooks aren't needed
-RUN HUSKY=0 npm ci --include-workspace-root --workspaces
+# Skip all lifecycle scripts (including prepare/husky) during CI builds
+RUN npm ci --include-workspace-root --workspaces --ignore-scripts
 
 # ---------- Build ----------
 FROM base AS build
