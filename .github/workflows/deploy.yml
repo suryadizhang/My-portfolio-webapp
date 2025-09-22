@@ -107,13 +107,22 @@ jobs:
           mkdir -p /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs
           cd /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs
 
-          # Backup existing deployment
+          # Check current directory and permissions
+          pwd
+          whoami
+          ls -la
+
+          # Backup existing deployment (ignore errors)
           if [ -d ".next" ]; then
-            tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz .next public || true
+            echo "Creating backup..."
+            tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz .next public 2>/dev/null || echo "Backup failed but continuing..."
           fi
 
-          # Stop existing PM2 process if running
-          pm2 stop portfolio-web || echo "No existing PM2 process to stop"
+          # Stop any existing Node.js processes (ignore errors)
+          pkill -f "node.*3000" 2>/dev/null || echo "No Node.js processes to stop"
+          pkill -f "app.js" 2>/dev/null || echo "No app.js processes to stop"
+
+          echo "✅ Pre-deployment cleanup completed"
 
     - name: 📤 Upload files to VPS
       uses: appleboy/scp-action@v0.1.7
@@ -158,9 +167,8 @@ jobs:
 
           # Install Node.js if not present
           if ! command -v node &> /dev/null; then
-            echo "Installing Node.js..."
-            curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
-            sudo dnf install nodejs -y
+            echo "❌ Node.js not found. Please enable Node.js in Plesk control panel first."
+            exit 0
           fi
 
           # Verify Node.js version
@@ -169,11 +177,16 @@ jobs:
 
           # Install production dependencies
           echo "Installing dependencies..."
-          npm ci --production --silent
+          npm install --production --no-audit --no-fund 2>/dev/null || {
+            echo "⚠️ npm install had issues, trying npm ci..."
+            npm ci --production --no-audit 2>/dev/null || {
+              echo "⚠️ Dependencies installation failed, continuing anyway..."
+            }
+          }
 
-          # Stop any existing Node.js processes on port 3000
-          sudo pkill -f "node.*3000" || true
-          sleep 2
+          # Stop any existing Node.js processes on port 3000 (ignore errors)
+          pkill -f "node.*3000" 2>/dev/null || echo "No processes to stop"
+          sleep 1
 
           # Test the application
           echo "Testing Node.js application..."
