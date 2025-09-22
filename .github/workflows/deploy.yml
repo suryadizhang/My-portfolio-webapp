@@ -103,26 +103,30 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_PORT || '22' }}
         script: |
-          # Create app directory if it doesn't exist
-          mkdir -p /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs
-          cd /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs
-
-          # Check current directory and permissions
-          pwd
-          whoami
-          ls -la
-
-          # Backup existing deployment (ignore errors)
-          if [ -d ".next" ]; then
-            echo "Creating backup..."
-            tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz .next public 2>/dev/null || echo "Backup failed but continuing..."
+          set -e
+          echo "Starting deployment..."
+          
+          # Basic environment check
+          echo "Current user: $(whoami)"
+          echo "Current directory: $(pwd)"
+          
+          # Create app directory
+          if [ ! -d "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" ]; then
+            echo "Creating httpdocs directory..."
+            mkdir -p "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" || {
+              echo "Failed to create directory. Trying with current path..."
+              mkdir -p "httpdocs" || echo "Directory creation failed"
+            }
           fi
-
-          # Stop any existing Node.js processes (ignore errors)
-          pkill -f "node.*3000" 2>/dev/null || echo "No Node.js processes to stop"
-          pkill -f "app.js" 2>/dev/null || echo "No app.js processes to stop"
-
-          echo "✅ Pre-deployment cleanup completed"
+          
+          # Navigate to target directory
+          cd "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" || {
+            echo "Failed to navigate to httpdocs, trying current directory..."
+            pwd
+            ls -la
+          }
+          
+          echo "✅ Pre-deployment setup completed"
 
     - name: 📤 Upload files to VPS
       uses: appleboy/scp-action@v0.1.7
@@ -133,6 +137,8 @@ jobs:
         port: ${{ secrets.VPS_PORT || '22' }}
         source: "deployment.tar.gz"
         target: "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/"
+        strip_components: 0
+      continue-on-error: false
 
     - name: 🔧 Configure and start application
       uses: appleboy/ssh-action@v1.0.0
