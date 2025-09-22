@@ -45,9 +45,7 @@ jobs:
       with:
         images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         tags: |
-          type=ref,event=branch
           type=sha,prefix=main-
-          type=sha
           
     - name: Build and push Docker image
       uses: docker/build-push-action@v5
@@ -61,7 +59,9 @@ jobs:
         
     - name: Output image
       id: image
-      run: echo "image=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:main-${{ github.sha }}" >> $GITHUB_OUTPUT
+      run: |
+        echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+        echo "image=${{ fromJSON(steps.meta.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
 
   extract:
     runs-on: ubuntu-latest
@@ -74,9 +74,21 @@ jobs:
       
     - name: Extract application from Docker image
       run: |
+        # Debug: Show what image we're trying to pull
+        echo "🔍 Attempting to pull image: ${{ needs.build.outputs.image }}"
+        
         # Pull the built image
         docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-        docker pull ${{ needs.build.outputs.image }}
+        
+        # Check if image exists before pulling
+        if ! docker pull ${{ needs.build.outputs.image }}; then
+          echo "❌ Image not found: ${{ needs.build.outputs.image }}"
+          echo "🔍 Available images in registry:"
+          docker search ghcr.io/suryadizhang/my-portfolio-webapp || true
+          exit 1
+        fi
+        
+        echo "✅ Successfully pulled image: ${{ needs.build.outputs.image }}"
         
         # Extract the monorepo application files properly
         mkdir -p extracted
