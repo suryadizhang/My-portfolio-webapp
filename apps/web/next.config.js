@@ -1,6 +1,17 @@
-const withBundleAnalyzer = require('@next/bundle-analyzer')({
-  enabled: process.env.ANALYZE === 'true',
-})
+// Optional bundle analyzer - only load if available and enabled
+const enableAnalyzer = process.env.ANALYZE === 'true';
+let withBundleAnalyzer = (config) => config; // default fallback
+
+if (enableAnalyzer) {
+  try {
+    withBundleAnalyzer = require('@next/bundle-analyzer')({
+      enabled: true,
+    });
+  } catch (error) {
+    console.warn('Bundle analyzer not available, skipping...');
+    withBundleAnalyzer = (config) => config;
+  }
+}
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -139,13 +150,20 @@ const nextConfig = {
   trailingSlash: false,
 }
 
-const withMDX = require('@next/mdx')({
-  extension: /\.mdx?$/,
-  options: {
-    remarkPlugins: [],
-    rehypePlugins: [],
-    providerImportSource: '@mdx-js/react',
-  },
-})
+// Optional MDX support
+let withMDX
+try {
+  withMDX = require('@next/mdx')({
+    extension: /\.mdx?$/,
+    options: {
+      remarkPlugins: [],
+      rehypePlugins: [],
+      providerImportSource: '@mdx-js/react',
+    },
+  })
+} catch (error) {
+  // MDX not available, use identity function
+  withMDX = (config) => config
+}
 
 module.exports = withBundleAnalyzer(withMDX(nextConfig))

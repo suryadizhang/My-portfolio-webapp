@@ -1,13 +1,22 @@
-name: Deploy to IONOS VPS with SSH Key
+name: Build & Deploy to IONOS VPS (Standalone)
 
 on:
   push:
     branches: [ main ]
   workflow_dispatch:
 
+concurrency:
+  group: deploy-main
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 60
+    
+    env:
+      NODE_OPTIONS: --max-old-space-size=4096
+      NEXT_TELEMETRY_DISABLED: 1
     
     steps:
     - name: Checkout code
@@ -16,15 +25,33 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '18'
+        node-version: '20'
         cache: 'npm'
         
-    - name: Install dependencies
-      run: npm ci
+    - name: Cache Next.js build cache
+      uses: actions/cache@v4
+      with:
+        path: .next/cache
+        key: next-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+        restore-keys: |
+          next-${{ runner.os }}-
+          
+    - name: Clean install dependencies
+      run: npm ci --no-audit --progress=false
       
-    - name: Build application
+    - name: Build application (standalone)
       run: npm run build
       
+    - name: Create deployment bundle
+      run: |
+        tar -czf bundle.tar.gz \
+          .next/standalone \
+          .next/static \
+          public \
+          package.json \
+          app.js \
+          ecosystem.config.js
+        
     - name: Setup SSH Key
       run: |
         mkdir -p ~/.ssh
@@ -32,55 +59,43 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
         
-    - name: Deploy to VPS
+    - name: Upload bundle to VPS
       run: |
-        # Create deployment directory on VPS
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
-          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs &&
-          mkdir -p portfolio-backup &&
-          if [ -f package.json ]; then
-            echo 'Backing up existing deployment...'
-            rsync -av --exclude=node_modules --exclude=.git --exclude=portfolio-backup . portfolio-backup/
-          fi
-        "
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          bundle.tar.gz \
+          apiportfolio@${{ secrets.VPS_HOST }}:/var/www/vhosts/apiportfolio.mysticdatanode.net/releases/${{ github.sha }}.tar.gz
         
-        # Copy built application to VPS
-        rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
-          --exclude='.git' \
-          --exclude='.github' \
-          --exclude='node_modules' \
-          --exclude='.next' \
-          --delete \
-          ./ apiportfolio@${{ secrets.VPS_HOST }}:/var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs/
-          
-        # Setup Node.js environment and deploy application
+    - name: Deploy and activate release
+      run: |
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
+          set -euo pipefail &&
+          echo 'Creating release directory...' &&
+          mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/releases/${{ github.sha }} &&
+          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/releases/${{ github.sha }} &&
+          echo 'Extracting bundle...' &&
+          tar -xzf ../${{ github.sha }}.tar.gz &&
+          rm ../${{ github.sha }}.tar.gz &&
+          echo 'Activating release...' &&
+          rsync -a . /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs/ --delete &&
           cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs &&
-          echo 'Setting up Node.js environment...' &&
-          export PATH=\"/usr/bin:/usr/local/bin:\$PATH\" &&
-          echo 'Node.js version:' \$(node --version 2>/dev/null || echo 'Not found in PATH') &&
-          echo 'npm version:' \$(npm --version 2>/dev/null || echo 'Not found in PATH') &&
-          if ! command -v node &> /dev/null; then
-            echo 'Adding Node.js to PATH...' &&
-            export PATH=\"/usr/bin:/usr/local/bin:/opt/nodejs/bin:\$PATH\" &&
-            if ! command -v node &> /dev/null; then
-              echo 'ERROR: Node.js not found. Please install Node.js on the server.' &&
-              exit 1
-            fi
-          fi &&
-          echo 'Installing dependencies...' &&
-          /usr/bin/npm install 2>/dev/null || npm install &&
-          echo 'Building application...' &&
-          /usr/bin/npm run build 2>/dev/null || npm run build &&
+          echo 'Installing runtime dependencies...' &&
+          test -f package-lock.json && /usr/bin/npm ci --omit=dev --no-audit || true &&
+          echo 'Stopping old processes...' &&
+          pkill -f 'node.*server.js' || pkill -f 'node.*app.js' || true &&
           echo 'Starting application...' &&
-          pkill -f 'node.*app.js' || true &&
-          nohup /usr/bin/node app.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid &&
-          echo 'Portfolio PID:' \$(cat /tmp/portfolio.pid) &&
+          if [ -f .next/standalone/server.js ]; then
+            nohup /usr/bin/node .next/standalone/server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
+          else
+            nohup /usr/bin/node app.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
+          fi &&
+          sleep 2 &&
+          echo 'Application started with PID:' \$(cat /tmp/portfolio.pid) &&
           echo 'Deployment completed successfully!'
         "
         
     - name: Verify Deployment
       run: |
-        echo "Checking if site is accessible..."
+        echo "Waiting for application to start..."
+        sleep 5
         curl -f -s -o /dev/null ${{ secrets.SITE_URL }} || echo "Site check failed, but deployment may still be successful"
         echo "Deployment completed!"
