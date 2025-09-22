@@ -4,15 +4,25 @@ FROM node:20-alpine AS base
 # Dependencies stage
 FROM base AS deps
 WORKDIR /app
+
+# Copy all package.json files to ensure proper workspace resolution
 COPY package*.json ./
-RUN npm ci --only=production
+COPY packages/config/package.json ./packages/config/
+COPY packages/ui/package.json ./packages/ui/
+COPY packages/utils/package.json ./packages/utils/
+COPY apps/web/package.json ./apps/web/
+
+# Install all dependencies including dev dependencies for building
+RUN npm ci --include=dev
 
 # Build stage
 FROM base AS builder
 WORKDIR /app
-COPY package*.json ./
-RUN npm ci
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+
+# Run the build with proper environment
+ENV NODE_ENV=production
 RUN npm run build
 
 # Production stage
