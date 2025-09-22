@@ -356,4 +356,5 @@ This portfolio demonstrates:
 
 ---
 
-*Built with ❤️ using Next.js 15, FastAPI, and modern full-stack technologies*
+*Built with ❤️ using Next.js 15, FastAPI, and modern full-stack technologies*#   P o r t f o l i o   d e p l o y m e n t   t r i g g e r  
+ 
