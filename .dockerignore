@@ -1,0 +1,33 @@
+# Dependencies (installed in container)
+node_modules
+
+# Git and GitHub
+.git
+.github
+
+# Build outputs (generated in container)
+.next
+dist
+*.log
+coverage
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode
+*.swp
+*.swo
+*~
+
+# Environment files (handled via secrets)
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Keep TypeScript configs and source files
+# tsconfig*.json - DO NOT IGNORE
+# packages/** - DO NOT IGNORE
+# apps/** - DO NOT IGNORE

@@ -29,6 +29,26 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v4
       
+    - name: Sanity check repository files
+      run: |
+        echo "🔍 Checking critical files for Docker build..."
+        test -f "tsconfig.base.json" || (echo "❌ tsconfig.base.json missing" && exit 1)
+        test -f "apps/web/tsconfig.json" || (echo "❌ apps/web/tsconfig.json missing" && exit 1)
+        test -f "apps/web/next.config.js" || (echo "❌ apps/web/next.config.js missing" && exit 1)
+        
+        echo "📦 Checking workspace packages:"
+        ls -la packages/*/src/ || true
+        test -d "packages/ui/src" || (echo "❌ packages/ui/src missing" && exit 1)
+        test -d "packages/utils/src" || (echo "❌ packages/utils/src missing" && exit 1)
+        test -d "packages/config" || (echo "❌ packages/config missing" && exit 1)
+        
+        echo "🔧 Checking utils exports:"
+        test -f "packages/utils/src/schemas/index.ts" || (echo "❌ utils schemas index missing" && exit 1)
+        test -f "packages/utils/src/kv/index.ts" || (echo "❌ utils kv index missing" && exit 1)
+        test -f "packages/utils/src/auth/index.ts" || (echo "❌ utils auth index missing" && exit 1)
+        
+        echo "✅ All critical files present"
+      
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
       

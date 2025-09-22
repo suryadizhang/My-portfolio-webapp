@@ -1,50 +1,46 @@
 # syntax=docker/dockerfile:1.6
 
-############################
-# 1) Dependencies
-############################
 FROM node:20-alpine AS deps
 WORKDIR /repo
 
-# Copy root manifests and workspace structure
-COPY package.json package-lock.json tsconfig.base.json turbo.json ./
-COPY apps/ apps/
-COPY packages/ packages/
+# Copy package manifests for workspace dependency resolution
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/utils/package.json packages/utils/package.json
+COPY packages/config/package.json packages/config/package.json
 
-# Install dependencies for all workspaces
+# Install ALL dependencies including workspaces
 RUN npm ci
 
-# Build workspace packages that web depends on
-RUN npm run build --workspace=@portfolio/ui --workspace=@portfolio/utils --workspace=@portfolio/config
-
-############################
-# 2) Build apps/web
-############################
+# ---------- Build ----------
 FROM node:20-alpine AS builder
 WORKDIR /repo
-ENV NEXT_TELEMETRY_DISABLED=1
 
-# Copy source first, then overlay node_modules to avoid overwriting
-COPY . .
+# Bring installed dependencies
 COPY --from=deps /repo/node_modules ./node_modules
+COPY --from=deps /repo/package.json ./package.json
 
-# Create symlink so apps/web can find node_modules and run build from apps/web
-RUN ln -sf /repo/node_modules /repo/apps/web/node_modules
+# Copy the entire repository (includes tsconfig.base.json and all sources)
+COPY . .
+
+# Build Next.js app (transpilePackages will handle workspace compilation)
 WORKDIR /repo/apps/web
 RUN npm run build
 
-############################
-# 3) Runtime = pure standalone
-############################
+# ---------- Runtime ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-# Copy the standalone structure to match workflow expectations
-# The workflow expects /app/standalone/server.js
-COPY --from=builder /repo/apps/web/.next/standalone/apps/web ./standalone
-COPY --from=builder /repo/apps/web/.next/static ./standalone/.next/static  
-COPY --from=builder /repo/apps/web/public ./standalone/public
+# Copy standalone output matching expected structure
+COPY --from=builder /repo/apps/web/.next/standalone ./
+COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /repo/apps/web/public ./apps/web/public
 
-# Now server.js should be at ./standalone/server.js as workflow expects
-CMD ["node", "standalone/server.js"]
+# Next standalone includes a server.js in /app/apps/web
+EXPOSE 3000
+CMD ["node", "apps/web/server.js"]
