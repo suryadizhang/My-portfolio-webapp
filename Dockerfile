@@ -7,6 +7,11 @@ WORKDIR /app
 
 # Copy all package.json files to ensure proper workspace resolution
 COPY package*.json ./
+
+# Create directory structure for workspace packages
+RUN mkdir -p packages/config packages/ui packages/utils apps/web
+
+# Copy individual package.json files
 COPY packages/config/package.json ./packages/config/
 COPY packages/ui/package.json ./packages/ui/
 COPY packages/utils/package.json ./packages/utils/
