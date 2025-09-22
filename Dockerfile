@@ -26,6 +26,7 @@ COPY --from=deps /repo/node_modules ./node_modules
 COPY . .
 
 # Build the web app from the correct directory
+# The node_modules are available at /repo/node_modules which Next.js will find
 WORKDIR /repo/apps/web
 RUN npm run build
 
@@ -36,9 +37,9 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Put the standalone output in a stable place
-COPY --from=builder /repo/apps/web/.next/standalone ./standalone
-COPY --from=builder /repo/apps/web/.next/static ./standalone/.next/static
-COPY --from=builder /repo/apps/web/public ./standalone/public
+# Copy the standalone Next.js app with correct structure
+COPY --from=builder /repo/apps/web/.next/standalone ./
+COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
+COPY --from=builder /repo/apps/web/public ./apps/web/public
 
-CMD ["node", "standalone/server.js"]
+CMD ["node", "apps/web/server.js"]
