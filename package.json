@@ -16,7 +16,12 @@
     "clean": "turbo clean && rm -rf node_modules",
     "format": "prettier --write \"**/*.{ts,tsx,md}\"",
     "start": "node server.js",
-    "start:production": "NODE_ENV=production node server.js"
+    "start:production": "NODE_ENV=production node server.js",
+    "lint:fix": "turbo lint --fix",
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "docker:smoke": "docker build -q . && node -e \"require.resolve('@portfolio/ui'); require.resolve('@portfolio/utils')\"",
+    "prepush": "npm run check && npm run docker:smoke",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
@@ -37,8 +42,17 @@
     "@types/react-dom": "^18.3.1"
   },
   "engines": {
-    "node": ">=18.0.0",
-    "npm": ">=8.0.0"
+    "node": ">=20.11.1",
+    "npm": ">=10.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,yml,yaml}": [
+      "prettier --write"
+    ]
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.3",
