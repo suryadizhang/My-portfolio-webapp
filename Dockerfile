@@ -7,7 +7,7 @@ FROM node:20-alpine AS deps
 WORKDIR /repo
 
 # Copy root manifests and workspace structure
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json tsconfig.base.json turbo.json ./
 COPY apps/ apps/
 COPY packages/ packages/
 
