@@ -103,30 +103,60 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_PORT || '22' }}
         script: |
-          set -e
-          echo "Starting deployment..."
+          echo "=== Starting deployment ==="
           
           # Basic environment check
           echo "Current user: $(whoami)"
           echo "Current directory: $(pwd)"
+          echo "Home directory: $HOME"
           
-          # Create app directory
-          if [ ! -d "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" ]; then
-            echo "Creating httpdocs directory..."
-            mkdir -p "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" || {
-              echo "Failed to create directory. Trying with current path..."
-              mkdir -p "httpdocs" || echo "Directory creation failed"
-            }
+          # Check if we can access the target path
+          echo "=== Testing directory access ==="
+          if [ -d "/var/www" ]; then
+            echo "✅ /var/www exists"
+            ls -la /var/www/ || echo "Cannot list /var/www/"
+          else
+            echo "❌ /var/www does not exist"
           fi
           
-          # Navigate to target directory
-          cd "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs" || {
-            echo "Failed to navigate to httpdocs, trying current directory..."
-            pwd
-            ls -la
-          }
+          if [ -d "/var/www/vhosts" ]; then
+            echo "✅ /var/www/vhosts exists" 
+            ls -la /var/www/vhosts/ || echo "Cannot list /var/www/vhosts/"
+          else
+            echo "❌ /var/www/vhosts does not exist"
+          fi
           
-          echo "✅ Pre-deployment setup completed"
+          # Check for domain directory
+          DOMAIN_DIR="/var/www/vhosts/${{ secrets.DOMAIN_NAME }}"
+          echo "Checking domain directory: $DOMAIN_DIR"
+          if [ -d "$DOMAIN_DIR" ]; then
+            echo "✅ Domain directory exists"
+            ls -la "$DOMAIN_DIR/" || echo "Cannot list domain directory"
+          else
+            echo "❌ Domain directory does not exist"
+          fi
+          
+          # Check for httpdocs
+          HTTPDOCS_DIR="$DOMAIN_DIR/httpdocs"
+          echo "Checking httpdocs: $HTTPDOCS_DIR"
+          if [ -d "$HTTPDOCS_DIR" ]; then
+            echo "✅ httpdocs directory exists"
+            ls -la "$HTTPDOCS_DIR/" || echo "Cannot list httpdocs"
+          else
+            echo "❌ httpdocs directory does not exist"
+            echo "Attempting to create httpdocs directory..."
+            mkdir -p "$HTTPDOCS_DIR" && echo "✅ Created httpdocs" || echo "❌ Failed to create httpdocs"
+          fi
+          
+          # Try to navigate to working directory
+          if [ -d "$HTTPDOCS_DIR" ]; then
+            cd "$HTTPDOCS_DIR" && echo "✅ Successfully navigated to httpdocs" || echo "❌ Failed to navigate to httpdocs"
+            echo "Working directory: $(pwd)"
+          else
+            echo "Using current directory as working directory: $(pwd)"
+          fi
+          
+          echo "=== Pre-deployment setup completed ==="
 
     - name: 📤 Upload files to VPS
       uses: appleboy/scp-action@v0.1.7
@@ -136,7 +166,7 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_PORT || '22' }}
         source: "deployment.tar.gz"
-        target: "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/"
+        target: "~/deployment.tar.gz"
         strip_components: 0
       continue-on-error: false
 
@@ -148,11 +178,55 @@ jobs:
         password: ${{ secrets.VPS_PASSWORD }}
         port: ${{ secrets.VPS_PORT || '22' }}
         script: |
-          cd /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs
-
-          # Extract deployment
-          tar -xzf deployment.tar.gz
+          echo "=== Starting application configuration ==="
+          
+          # Find the deployment file
+          if [ -f "~/deployment.tar.gz" ]; then
+            DEPLOY_FILE="~/deployment.tar.gz"
+          elif [ -f "deployment.tar.gz" ]; then
+            DEPLOY_FILE="deployment.tar.gz"
+          else
+            echo "❌ Deployment file not found"
+            ls -la ~
+            exit 1
+          fi
+          
+          echo "Found deployment file: $DEPLOY_FILE"
+          
+          # Determine working directory
+          WORK_DIR="/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs"
+          if [ -d "$WORK_DIR" ]; then
+            echo "Using Plesk directory: $WORK_DIR"
+            cd "$WORK_DIR" || {
+              echo "Failed to access Plesk directory, using home directory"
+              WORK_DIR="$HOME/portfolio"
+              mkdir -p "$WORK_DIR"
+              cd "$WORK_DIR"
+            }
+          else
+            echo "Plesk directory not accessible, using home directory"
+            WORK_DIR="$HOME/portfolio"
+            mkdir -p "$WORK_DIR"
+            cd "$WORK_DIR"
+          fi
+          
+          echo "Working directory: $(pwd)"
+          
+          # Copy and extract deployment
+          cp "$DEPLOY_FILE" . || {
+            echo "❌ Failed to copy deployment file"
+            exit 1
+          }
+          
+          tar -xzf deployment.tar.gz || {
+            echo "❌ Failed to extract deployment"
+            ls -la
+            exit 1
+          }
           rm deployment.tar.gz
+          
+          echo "✅ Files extracted successfully"
+          ls -la | head -10
 
           # Create directory structure
           mkdir -p logs apps/web
