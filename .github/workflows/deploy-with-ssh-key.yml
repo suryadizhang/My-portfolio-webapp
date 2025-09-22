@@ -69,7 +69,7 @@ jobs:
             fi
           fi &&
           echo 'Installing dependencies...' &&
-          /usr/bin/npm install --production 2>/dev/null || npm install --production &&
+          /usr/bin/npm install 2>/dev/null || npm install &&
           echo 'Building application...' &&
           /usr/bin/npm run build 2>/dev/null || npm run build &&
           echo 'Starting application...' &&
