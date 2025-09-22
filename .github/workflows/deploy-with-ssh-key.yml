@@ -74,43 +74,47 @@ jobs:
       
     - name: Extract application from Docker image
       run: |
-        # Debug: Show what image we're trying to pull
-        echo "🔍 Attempting to pull image: ${{ needs.build.outputs.image }}"
-        
-        # Pull the built image
+        echo "🔍 Pulling image: ${{ needs.build.outputs.image }}"
         docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
-        
-        # Check if image exists before pulling
-        if ! docker pull ${{ needs.build.outputs.image }}; then
-          echo "❌ Image not found: ${{ needs.build.outputs.image }}"
-          exit 1
-        fi
-        
-        echo "✅ Successfully pulled image: ${{ needs.build.outputs.image }}"
-        
-        # Create a temporary container and extract the complete standalone runtime
-        echo "🔍 Extracting complete standalone application..."
+        docker pull ${{ needs.build.outputs.image }}
+
         CID=$(docker create ${{ needs.build.outputs.image }})
         mkdir -p extracted
-        
-        # Copy the complete standalone folder from the Docker image
-        docker cp "$CID:/app/standalone" extracted/ 2>/dev/null || {
-          echo "❌ Failed to copy standalone folder from Docker image"
-          echo "🔍 Inspecting Docker image structure:"
-          docker run --rm ${{ needs.build.outputs.image }} find /app -type d -name "*standalone*" || true
-          docker run --rm ${{ needs.build.outputs.image }} find /app -name "server.js" -type f || true
-          docker rm -f "$CID"
+
+        echo "🔎 Probing for standalone output in multiple locations..."
+        # 1) Preferred location (from new Dockerfile)
+        if docker cp "$CID:/app/standalone" extracted/ 2>/dev/null; then
+          echo "✅ Copied /app/standalone"
+        # 2) Fallback: original Next.js standalone path
+        elif docker cp "$CID:/repo/apps/web/.next/standalone" extracted/standalone 2>/dev/null; then
+          echo "✅ Copied /repo/apps/web/.next/standalone"
+          # Also bring static & public if they exist
+          docker cp "$CID:/repo/apps/web/.next/static" extracted/standalone/.next/static 2>/dev/null || true
+          docker cp "$CID:/repo/apps/web/public" extracted/standalone/public 2>/dev/null || true
+        # 3) Another fallback for different Docker setups
+        elif docker cp "$CID:/app/apps/web/.next/standalone" extracted/standalone 2>/dev/null; then
+          echo "✅ Copied /app/apps/web/.next/standalone"
+          docker cp "$CID:/app/apps/web/.next/static" extracted/standalone/.next/static 2>/dev/null || true
+          docker cp "$CID:/app/apps/web/public" extracted/standalone/public 2>/dev/null || true
+        else
+          echo "❌ Could not find standalone output in image"
+          echo "� Inspecting image structure:"
+          docker cp "$CID:/app" extracted/_debug_app 2>/dev/null || true
+          docker cp "$CID:/repo" extracted/_debug_repo 2>/dev/null || true
+          echo "Contents of /app:"
+          ls -la extracted/_debug_app 2>/dev/null || echo "No /app found"
+          echo "Contents of /repo:"
+          ls -la extracted/_debug_repo 2>/dev/null || echo "No /repo found"
+          docker rm -f "$CID" || true
           exit 1
-        }
-        
-        # Clean up temporary container
+        fi
+
         docker rm -f "$CID"
-        
-        # Verify we have the complete standalone runtime
-        echo "🔍 Verifying extracted standalone application:"
+
+        echo "� Verifying extracted standalone application:"
         find extracted -maxdepth 3 -type f | sort
         
-        # Verify server.js exists
+        # Hard fail if server.js is missing
         if [ ! -f "extracted/standalone/server.js" ]; then
           echo "❌ server.js not found in extracted standalone folder"
           ls -la extracted/standalone/ || true
@@ -118,7 +122,7 @@ jobs:
         fi
         
         echo "✅ Successfully extracted complete standalone application"
-        
+
         # Create deployment bundle
         cd extracted
         tar -czf ../deployment.tar.gz .
@@ -179,16 +183,14 @@ jobs:
           tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
           rm /tmp/deployment-${{ github.sha }}.tar.gz
           
-          # Verify the standalone application
-          echo '🔍 Listing extracted contents:'
-          ls -la || true
+          # Verify the extracted bundle
+          echo '🔍 Checking extracted bundle:'
+          ls -la
           
           if [ ! -f 'standalone/server.js' ]; then
-            echo '❌ Standalone server.js not found'
+            echo '❌ standalone/server.js missing from deployment bundle'
             echo 'Available files:'
-            find . -name 'server.js' -type f || true
-            echo 'Standalone directory contents:'
-            ls -la standalone/ || true
+            find . -name '*.js' -type f | head -10 || true
             exit 1
           fi
           

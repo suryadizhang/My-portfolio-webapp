@@ -1,57 +1,46 @@
-# Multi-stage Docker build for Next.js standalone
-FROM node:20-alpine AS base
+# syntax=docker/dockerfile:1.6
 
-# Dependencies stage
-FROM base AS deps
-WORKDIR /app
+############################
+# 1) Dependencies
+############################
+FROM node:20-alpine AS deps
+WORKDIR /repo
 
-# Copy all package.json files to ensure proper workspace resolution
-COPY package*.json ./
+# Copy only manifests for better caching
+COPY package.json package-lock.json ./
+COPY apps/web/package.json apps/web/package.json
+COPY packages/ui/package.json packages/ui/package.json
+COPY packages/utils/package.json packages/utils/package.json  
+COPY packages/config/package.json packages/config/package.json
 
-# Create directory structure for workspace packages
-RUN mkdir -p packages/config packages/ui packages/utils apps/web
-
-# Copy individual package.json files
-COPY packages/config/package.json ./packages/config/
-COPY packages/ui/package.json ./packages/ui/
-COPY packages/utils/package.json ./packages/utils/
-COPY apps/web/package.json ./apps/web/
-
-# Install all dependencies including dev dependencies for building
 RUN npm ci
 
-# Build stage
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+############################
+# 2) Build apps/web
+############################
+FROM node:20-alpine AS builder
+WORKDIR /repo
+ENV NEXT_TELEMETRY_DISABLED=1
+
+COPY --from=deps /repo/node_modules ./node_modules
 COPY . .
 
-# Build the web application with standalone output
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN npm run build
+# IMPORTANT: build in the web app folder where next.config.js is located
+WORKDIR /repo/apps/web
+RUN npm run build   # next.config.js already has `output: 'standalone'`
 
-# Production stage
-FROM base AS runner
+############################
+# 3) Runtime = pure standalone
+############################
+FROM node:20-alpine AS runner
 WORKDIR /app
-
 ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Create the standalone tree in a predictable place
+# This gives us: /app/standalone/server.js (entry), /app/standalone/.next/static, etc.
+COPY --from=builder /repo/apps/web/.next/standalone ./standalone
+COPY --from=builder /repo/apps/web/.next/static ./standalone/.next/static
+COPY --from=builder /repo/apps/web/public ./standalone/public
 
-# Copy the complete standalone build
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./standalone
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./standalone/.next/static
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./standalone/public
-
-USER nextjs
-
-EXPOSE 3000
-
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
-# Run the standalone server
+# (Optional) default command: allows `docker run IMAGE` to "just work"
 CMD ["node", "standalone/server.js"]
