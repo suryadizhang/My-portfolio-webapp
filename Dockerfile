@@ -37,9 +37,11 @@ FROM node:20-alpine AS runner
 WORKDIR /app
 ENV NODE_ENV=production
 
-# Copy the standalone Next.js app with correct structure
-COPY --from=builder /repo/apps/web/.next/standalone ./
-COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /repo/apps/web/public ./apps/web/public
+# Copy the standalone structure to match workflow expectations
+# The workflow expects /app/standalone/server.js
+COPY --from=builder /repo/apps/web/.next/standalone/apps/web ./standalone
+COPY --from=builder /repo/apps/web/.next/static ./standalone/.next/static  
+COPY --from=builder /repo/apps/web/public ./standalone/public
 
-CMD ["node", "apps/web/server.js"]
+# Now server.js should be at ./standalone/server.js as workflow expects
+CMD ["node", "standalone/server.js"]
