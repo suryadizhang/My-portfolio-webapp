@@ -25,8 +25,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY --from=deps /repo/node_modules ./node_modules
 COPY . .
 
-# Build the web app using workspace command
-RUN npm run -w @portfolio/web build
+# Build the web app from the correct directory
+WORKDIR /repo/apps/web
+RUN npm run build
 
 ############################
 # 3) Runtime = pure standalone
