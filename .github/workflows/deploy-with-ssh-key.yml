@@ -119,20 +119,18 @@ jobs:
         mkdir -p extracted
 
         echo "🔎 Probing for standalone output in multiple locations..."
-        # 1) Preferred location (from new Dockerfile)
-        if docker cp "$CID:/app/standalone" extracted/ 2>/dev/null; then
+        # 1) Current Docker structure - copy /app as standalone
+        if docker cp "$CID:/app" extracted/standalone 2>/dev/null; then
+          echo "✅ Copied /app as standalone"
+        # 2) Fallback: check if there's a standalone subdirectory
+        elif docker cp "$CID:/app/standalone" extracted/ 2>/dev/null; then
           echo "✅ Copied /app/standalone"
-        # 2) Fallback: original Next.js standalone path
+        # 3) Fallback: original Next.js standalone path
         elif docker cp "$CID:/repo/apps/web/.next/standalone" extracted/standalone 2>/dev/null; then
           echo "✅ Copied /repo/apps/web/.next/standalone"
           # Also bring static & public if they exist
           docker cp "$CID:/repo/apps/web/.next/static" extracted/standalone/.next/static 2>/dev/null || true
           docker cp "$CID:/repo/apps/web/public" extracted/standalone/public 2>/dev/null || true
-        # 3) Another fallback for different Docker setups
-        elif docker cp "$CID:/app/apps/web/.next/standalone" extracted/standalone 2>/dev/null; then
-          echo "✅ Copied /app/apps/web/.next/standalone"
-          docker cp "$CID:/app/apps/web/.next/static" extracted/standalone/.next/static 2>/dev/null || true
-          docker cp "$CID:/app/apps/web/public" extracted/standalone/public 2>/dev/null || true
         else
           echo "❌ Could not find standalone output in image"
           echo "� Inspecting image structure:"
