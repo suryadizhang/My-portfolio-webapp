@@ -1,0 +1,28 @@
+# Snyk configuration for security scanning
+version: v1.0.0
+
+# Language-specific configurations
+language-settings:
+  javascript:
+    # Ignore dev dependencies for production security assessment
+    exclude-dev-dependencies: false
+    # Include package-lock.json for better dependency resolution
+    scan-all-unmanaged: false
+
+# Path configurations
+exclude:
+  - .next/
+  - coverage/
+  - node_modules/
+  - '*.test.*'
+  - '*.spec.*'
+  - '__tests__/'
+
+# Patch settings
+patch:
+  skip-unresolved: true
+
+# Only fail on high and critical issues
+fail-on:
+  - high
+  - critical

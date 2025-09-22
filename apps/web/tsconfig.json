@@ -15,7 +15,8 @@
       "@utils/*": ["../../packages/utils/src/*"],
       "@config": ["../../packages/config"],
       "@config/*": ["../../packages/config/*"]
-    }
+    },
+    "types": ["jest", "node", "@testing-library/jest-dom"]
   },
   "include": [
     "next-env.d.ts",

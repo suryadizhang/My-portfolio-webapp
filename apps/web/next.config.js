@@ -1,3 +1,7 @@
+const withBundleAnalyzer = require('@next/bundle-analyzer')({
+  enabled: process.env.ANALYZE === 'true',
+})
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   experimental: {
@@ -24,6 +28,33 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   generateEtags: true,
+  swcMinify: true,
+  
+  // Performance optimizations
+  modularizeImports: {
+    'lucide-react': {
+      transform: 'lucide-react/dist/esm/icons/{{member}}',
+    },
+  },
+  
+  // Bundle optimization
+  webpack: (config, { dev, isServer }) => {
+    // Bundle analyzer
+    if (!dev && !isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        '@': require('path').resolve(__dirname, 'src'),
+      }
+    }
+
+    // Tree shaking optimizations
+    if (!dev) {
+      config.optimization.usedExports = true
+      config.optimization.sideEffects = false
+    }
+
+    return config
+  },
   
   // Security headers
   async headers() {
@@ -118,4 +149,4 @@ const withMDX = require('@next/mdx')({
   },
 })
 
-module.exports = withMDX(nextConfig)
+module.exports = withBundleAnalyzer(withMDX(nextConfig))

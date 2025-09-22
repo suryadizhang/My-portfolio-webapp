@@ -8,7 +8,11 @@
     "start": "next start",
     "lint": "eslint . --max-warnings 0 --ext .ts,.tsx",
     "typecheck": "tsc --noEmit",
-    "test": "echo 'No tests specified yet' && exit 0"
+    "test": "jest --watchAll=false",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "analyze": "ANALYZE=true npm run build",
+    "bundle-analyze": "npx @next/bundle-analyzer"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.0.0",
@@ -28,6 +32,11 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@next/bundle-analyzer": "^15.5.3",
+    "@testing-library/jest-dom": "^6.8.0",
+    "@testing-library/react": "^16.3.0",
+    "@testing-library/user-event": "^14.6.1",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20.0.0",
     "@types/react": "^18.3.1",
     "@types/react-dom": "^18.3.1",
@@ -36,6 +45,8 @@
     "autoprefixer": "^10.4.14",
     "eslint": "^8.0.0",
     "eslint-config-next": "^15.0.0",
+    "jest": "^30.1.3",
+    "jest-environment-jsdom": "^30.1.2",
     "postcss": "^8.4.24",
     "typescript": "^5.0.0"
   }
