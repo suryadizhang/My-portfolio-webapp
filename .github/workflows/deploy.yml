@@ -1,0 +1,134 @@
+name: Deploy to IONOS VPS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+    types: [closed]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+    - name: 🏗 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🏗 Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: 📦 Install dependencies
+      run: npm ci
+
+    - name: 🏗 Build application
+      run: npm run build
+      env:
+        NODE_ENV: production
+        NEXT_PUBLIC_SITE_URL: ${{ secrets.SITE_URL }}
+
+    - name: 🧪 Run tests (optional)
+      run: npm run test --if-present
+
+    - name: 📂 Create deployment package
+      run: |
+        # Create deployment archive
+        tar -czf deployment.tar.gz \
+          .next \
+          public \
+          package.json \
+          package-lock.json \
+          ecosystem.config.js \
+          deploy.sh \
+          --exclude='node_modules' \
+          --exclude='.git'
+
+    - name: 🚀 Deploy to VPS
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT || '22' }}
+        script: |
+          # Create app directory if it doesn't exist
+          mkdir -p /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/portfolio
+          cd /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/portfolio
+
+          # Backup existing deployment
+          if [ -d ".next" ]; then
+            tar -czf backup-$(date +%Y%m%d-%H%M%S).tar.gz .next public || true
+          fi
+
+          # Stop existing PM2 process if running
+          pm2 stop portfolio-web || true
+
+    - name: 📤 Upload files to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT || '22' }}
+        source: "deployment.tar.gz"
+        target: "/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/"
+
+    - name: 🔧 Configure and start application
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT || '22' }}
+        script: |
+          cd /var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs/
+
+          # Extract deployment
+          tar -xzf deployment.tar.gz
+          rm deployment.tar.gz
+
+          # Install production dependencies
+          npm ci --production
+
+          # Update PM2 ecosystem config with correct paths
+          sed -i "s|/var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app|/var/www/vhosts/${{ secrets.DOMAIN_NAME }}/httpdocs|g" ecosystem.config.js
+
+          # Start/restart PM2 process
+          pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
+
+          # Save PM2 configuration
+          pm2 save
+
+          # Show status
+          pm2 status
+
+    - name: ✅ Verify deployment
+      uses: appleboy/ssh-action@v1.0.0
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        port: ${{ secrets.VPS_PORT || '22' }}
+        script: |
+          # Wait for app to start
+          sleep 10
+
+          # Test local endpoint
+          curl -f http://localhost:3000 || echo "⚠️ Local endpoint test failed"
+
+          # Test PDF API
+          curl -f http://localhost:3000/api/resume/view || echo "⚠️ PDF API test failed"
+
+          # Show recent logs
+          pm2 logs portfolio-web --lines 20
+
+    - name: 📊 Deployment Summary
+      run: |
+        echo "🎉 Deployment completed!"
+        echo "🌐 Site: https://${{ secrets.DOMAIN_NAME }}"
+        echo "📋 Check logs with: pm2 logs portfolio-web"
+        echo "📈 Monitor with: pm2 monit"

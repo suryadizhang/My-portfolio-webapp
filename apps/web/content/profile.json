@@ -85,6 +85,6 @@
     "OpenAPI/Swagger",
     "Testing (Pytest, Vitest)"
   ],
-  "hobbies": ["Hiking", "Cooking (Hibachi)", "Basketball"],
+  "hobbies": ["Reading manga", "Cooking", "Playing video games"],
   "availability": ["Software Engineer", "Full-Stack Engineer", "Back End Engineer"]
 }

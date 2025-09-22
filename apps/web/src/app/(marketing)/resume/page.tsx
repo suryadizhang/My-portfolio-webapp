@@ -1,7 +1,8 @@
-import { getProfile, type Profile } from '@/lib/content'
+import { getProfile } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
 import { Badge, Button } from '@portfolio/ui'
 import { Eye, FileText, Calendar, MapPin, Mail } from 'lucide-react'
+import { PDFViewer } from '@/components/PDFViewer'
 
 export const metadata = generateSiteMetadata(
   'Resume',
@@ -35,9 +36,11 @@ export default function ResumePage() {
               Download JSON
             </a>
           </Button>
-          <Button variant="outline">
-            <Eye className="h-4 w-4 mr-2" />
-            View Online
+          <Button variant="outline" asChild>
+            <a href="/resume/Suryadi_Zhang_Resume.pdf" target="_blank">
+              <Eye className="h-4 w-4 mr-2" />
+              View in New Tab
+            </a>
           </Button>
           <Button variant="secondary" asChild>
             <a href={`mailto:${profile.contact.email}?subject=Resume Request`}>
@@ -50,20 +53,12 @@ export default function ResumePage() {
 
       {/* Resume Content */}
       <div className="max-w-4xl mx-auto">
-        {/* PDF Viewer Placeholder */}
+        {/* PDF Viewer */}
         <div className="mb-12">
-          <div className="relative aspect-[8.5/11] bg-card border rounded-lg overflow-hidden shadow-lg">
-            <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-8">
-              <FileText className="h-16 w-16 text-muted-foreground/50 mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Resume Preview</h3>
-              <p className="text-muted-foreground mb-4">
-                Interactive PDF viewer will be displayed here
-              </p>
-              <p className="text-sm text-muted-foreground">
-                Email me for the full resume document
-              </p>
-            </div>
-          </div>
+          <PDFViewer 
+            pdfUrl="/api/resume/view"
+            downloadUrl="/api/resume/download?format=pdf"
+          />
         </div>
 
         {/* Resume Summary */}

@@ -24,10 +24,10 @@ export default function Hero() {
           See my work
         </a>
         <a
-          href="/api/resume/download"
+          href="/resume"
           className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white hover:bg-slate-800"
         >
-          Download Resume
+          View Resume
         </a>
       </div>
     </section>

@@ -56,7 +56,7 @@ export default function Footer() {
                 <a href="/contact" className="block text-sm text-slate-600 hover:text-slate-900">
                   Contact
                 </a>
-                <a href="/api/resume/download" className="block text-sm text-slate-600 hover:text-slate-900">
+                <a href="/resume" className="block text-sm text-slate-600 hover:text-slate-900">
                   Resume
                 </a>
               </div>
