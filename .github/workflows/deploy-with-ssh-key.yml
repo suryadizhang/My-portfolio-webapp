@@ -80,19 +80,18 @@ jobs:
         # Extract the monorepo application files properly
         mkdir -p extracted
         docker run --rm -v $(pwd)/extracted:/output ${{ needs.build.outputs.image }} sh -c "
-          # Copy the entire .next directory structure
-          cp -r /app/.next /output/ &&
-          # Copy public assets from web app
-          cp -r /app/apps/web/public /output/ &&
-          # Copy package.json files
-          cp /app/package.json /output/ &&
-          cp /app/apps/web/package.json /output/web-package.json
+          # Copy the standalone build (already at root in container)
+          cp -r /app/apps /output/ &&
+          cp -r /app/node_modules /output/ || true &&
+          cp /app/package.json /output/ || true &&
+          # Copy the .next static files and standalone server
+          mkdir -p /output/apps/web/.next &&
+          cp -r /app/apps/web/.next/static /output/apps/web/.next/ || true
         "
         
         # Create a production server script that handles monorepo structure
         cat > extracted/server.js << 'EOF'
         #!/usr/bin/env node
-        const { createServer } = require('http');
         const path = require('path');
         const fs = require('fs');
 
@@ -102,22 +101,28 @@ jobs:
         console.log('🚀 Starting Next.js production server...');
         console.log(`📍 Server will run on http://${hostname}:${port}`);
 
-        // For monorepo structure, the standalone server is in apps/web
-        const standaloneServer = path.join(__dirname, '.next/standalone/apps/web/server.js');
+        // For the Docker-extracted structure, the server is at apps/web/server.js
+        const serverPath = path.join(__dirname, 'apps/web/server.js');
 
-        if (fs.existsSync(standaloneServer)) {
-          console.log('🎯 Using Next.js standalone server for monorepo...');
+        if (fs.existsSync(serverPath)) {
+          console.log('🎯 Using Next.js standalone server...');
           
           // Set environment variables for standalone server
           process.env.HOSTNAME = hostname;
           process.env.PORT = port.toString();
           
-          // Change to the correct directory for the standalone server
-          process.chdir(path.join(__dirname, '.next/standalone/apps/web'));
-          
-          require('./server.js');
+          // Require the standalone server
+          require(serverPath);
         } else {
-          console.error('❌ Standalone server not found at:', standaloneServer);
+          console.error('❌ Server not found at:', serverPath);
+          console.log('🔍 Available files:');
+          console.log(fs.readdirSync(__dirname));
+          if (fs.existsSync(path.join(__dirname, 'apps'))) {
+            console.log('Apps directory:', fs.readdirSync(path.join(__dirname, 'apps')));
+            if (fs.existsSync(path.join(__dirname, 'apps/web'))) {
+              console.log('Web directory:', fs.readdirSync(path.join(__dirname, 'apps/web')));
+            }
+          }
           process.exit(1);
         }
         EOF
@@ -189,12 +194,15 @@ jobs:
           tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
           rm /tmp/deployment-${{ github.sha }}.tar.gz
           
-          # Verify the monorepo structure
-          if [ -f '.next/standalone/apps/web/server.js' ]; then
-            echo '✅ Monorepo standalone server found'
+          # Verify the structure after extraction
+          if [ -f 'apps/web/server.js' ]; then
+            echo '✅ Docker-extracted server found at apps/web/server.js'
+          elif [ -f 'server.js' ]; then
+            echo '✅ Root server.js found'
           else
-            echo '❌ Monorepo standalone server not found, listing structure:'
-            find .next -name 'server.js' -type f || true
+            echo '❌ Server not found, listing structure:'
+            ls -la || true
+            find . -name 'server.js' -type f || true
             exit 1
           fi
           
