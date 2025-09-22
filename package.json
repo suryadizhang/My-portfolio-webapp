@@ -14,7 +14,9 @@
     "test": "turbo test",
     "test:python": "cd apps/service-python && pytest -q",
     "clean": "turbo clean && rm -rf node_modules",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\""
+    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
+    "start": "node server.js",
+    "start:production": "NODE_ENV=production node server.js"
   },
   "devDependencies": {
     "@turbo/gen": "^1.12.4",

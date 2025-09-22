@@ -56,6 +56,8 @@ jobs:
         tar -rzf deployment.tar.gz \
           ecosystem.config.js \
           deploy.sh \
+          server.js \
+          package.json \
           .env.production
         
         # Verify archive contents
