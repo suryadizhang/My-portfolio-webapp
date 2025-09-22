@@ -1,0 +1,88 @@
+name: Monorepo CI
+
+on:
+  pull_request:
+    branches: [ main ]
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }} 
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      web:           ${{ steps.filter.outputs.web }}
+      service_python: ${{ steps.filter.outputs.service_python }}
+      shared:        ${{ steps.filter.outputs.shared }}
+      infra:         ${{ steps.filter.outputs.infra }}
+      any:           ${{ steps.filter.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Detect changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            web:
+              - 'apps/web/**'
+            service_python:
+              - 'apps/service-python/**'
+            shared:
+              - 'packages/**'
+              - 'tsconfig.base.json'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'turbo.json'
+            infra:
+              - '.github/workflows/**'
+              - 'Dockerfile'
+              - 'docker-compose.yml'
+              - 'nginx.conf'
+              - 'ecosystem.config.js'
+              - 'deploy.sh'
+            any:
+              - '**'
+
+  web:
+    needs: changes
+    if: ${{ needs.changes.outputs.web == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.infra == 'true' }}
+    uses: ./.github/workflows/reusable-web.yml
+    with:
+      do_deploy: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    secrets: inherit
+
+  service_python:
+    needs: changes
+    if: ${{ needs.changes.outputs.service_python == 'true' || needs.changes.outputs.shared == 'true' || needs.changes.outputs.infra == 'true' }}
+    uses: ./.github/workflows/reusable-service-python.yml
+    with:
+      do_deploy: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
+    secrets: inherit
+
+  # Summary job to provide overall status
+  ci_complete:
+    runs-on: ubuntu-latest
+    needs: [changes, web, service_python]
+    if: always()
+    steps:
+      - name: Check all jobs
+        run: |
+          echo "Changes detected:"
+          echo "  Web: ${{ needs.changes.outputs.web }}"
+          echo "  Service Python: ${{ needs.changes.outputs.service_python }}"
+          echo "  Shared: ${{ needs.changes.outputs.shared }}"
+          echo "  Infrastructure: ${{ needs.changes.outputs.infra }}"
+          
+          # Check if any required job failed
+          if [[ "${{ needs.web.result }}" == "failure" || "${{ needs.service_python.result }}" == "failure" ]]; then
+            echo "❌ Some jobs failed"
+            exit 1
+          elif [[ "${{ needs.web.result }}" == "skipped" && "${{ needs.service_python.result }}" == "skipped" ]]; then
+            echo "ℹ️  No changes detected, all jobs skipped"
+          else
+            echo "✅ All relevant jobs completed successfully"
+          fi

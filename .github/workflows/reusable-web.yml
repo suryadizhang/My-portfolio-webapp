@@ -1,0 +1,321 @@
+name: Web CI (reusable)
+
+on:
+  workflow_call:
+    inputs:
+      do_deploy:
+        type: boolean
+        required: false
+        default: false
+    secrets:
+      SSH_PRIVATE_KEY:
+        required: false
+      VPS_HOST:
+        required: false
+      SITE_URL:
+        required: false
+      GITHUB_TOKEN:
+        required: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: suryadizhang/my-portfolio-webapp
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Sanity check repository files
+      run: |
+        echo "🔍 Checking critical files for Docker build..."
+        test -f "tsconfig.base.json" || (echo "❌ tsconfig.base.json missing" && exit 1)
+        test -f "apps/web/tsconfig.json" || (echo "❌ apps/web/tsconfig.json missing" && exit 1)
+        test -f "apps/web/next.config.js" || (echo "❌ apps/web/next.config.js missing" && exit 1)
+        
+        echo "📦 Checking workspace packages:"
+        ls -la packages/*/src/ || true
+        test -d "packages/ui/src" || (echo "❌ packages/ui/src missing" && exit 1)
+        test -d "packages/utils/src" || (echo "❌ packages/utils/src missing" && exit 1)
+        test -d "packages/config" || (echo "❌ packages/config missing" && exit 1)
+        
+        echo "🔧 Checking utils exports:"
+        test -f "packages/utils/src/schemas/index.ts" || (echo "❌ utils schemas index missing" && exit 1)
+        test -f "packages/utils/src/kv/index.ts" || (echo "❌ utils kv index missing" && exit 1)
+        test -f "packages/utils/src/auth/index.ts" || (echo "❌ utils auth index missing" && exit 1)
+        
+        echo "✅ All critical files present"
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    # Install full workspace deterministically
+    - name: Install dependencies
+      run: npm ci --include-workspace-root --workspaces
+
+    # Pre-flight module sanity (classic monorepo issue)
+    - name: Module sanity check
+      run: node -e "require.resolve('@portfolio/ui'); require.resolve('@portfolio/utils')"
+
+    - name: Typecheck + Lint + Unit tests
+      run: |
+        npm run typecheck
+        npm run test
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=sha,prefix=web-
+          
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        
+    - name: Output image
+      id: image
+      run: |
+        echo "Generated tags: ${{ steps.meta.outputs.tags }}"
+        echo "image=${{ fromJSON(steps.meta.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
+        
+    # Optional: verify Next standalone output exists inside the image
+    - name: Verify standalone output
+      run: |
+        set -e
+        IMG="${{ fromJSON(steps.meta.outputs.json).tags[0] }}"
+        docker pull "$IMG"
+        cid=$(docker create "$IMG")
+        docker cp "$cid:/app/apps/web/server.js" ./server.js || {
+          echo "Standalone server not found under /app/apps/web"
+          docker cp "$cid:/app" ./debug-app || true
+          ls -la ./debug-app || true
+          exit 1
+        }
+        docker rm "$cid"
+
+  extract:
+    runs-on: ubuntu-latest
+    needs: build
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v4
+      
+    - name: Extract application from Docker image
+      run: |
+        echo "🔍 Pulling image: ${{ needs.build.outputs.image }}"
+        docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
+        docker pull ${{ needs.build.outputs.image }}
+
+        CID=$(docker create ${{ needs.build.outputs.image }})
+        mkdir -p extracted
+
+        echo "🔎 Probing for standalone output in multiple locations..."
+        # 1) Current Docker structure - copy /app as standalone
+        if docker cp "$CID:/app" extracted/standalone 2>/dev/null; then
+          echo "✅ Copied /app as standalone"
+        # 2) Fallback: check if there's a standalone subdirectory
+        elif docker cp "$CID:/app/standalone" extracted/ 2>/dev/null; then
+          echo "✅ Copied /app/standalone"
+        # 3) Fallback: original Next.js standalone path
+        elif docker cp "$CID:/repo/apps/web/.next/standalone" extracted/standalone 2>/dev/null; then
+          echo "✅ Copied /repo/apps/web/.next/standalone"
+          # Also bring static & public if they exist
+          docker cp "$CID:/repo/apps/web/.next/static" extracted/standalone/.next/static 2>/dev/null || true
+          docker cp "$CID:/repo/apps/web/public" extracted/standalone/public 2>/dev/null || true
+        else
+          echo "❌ Could not find standalone output in image"
+          echo "🔍 Inspecting image structure:"
+          docker cp "$CID:/app" extracted/_debug_app 2>/dev/null || true
+          docker cp "$CID:/repo" extracted/_debug_repo 2>/dev/null || true
+          echo "Contents of /app:"
+          ls -la extracted/_debug_app 2>/dev/null || echo "No /app found"
+          echo "Contents of /repo:"
+          ls -la extracted/_debug_repo 2>/dev/null || echo "No /repo found"
+          docker rm -f "$CID" || true
+          exit 1
+        fi
+
+        docker rm -f "$CID"
+
+        echo "📋 Verifying extracted standalone application:"
+        find extracted -maxdepth 3 -type f | sort
+        
+        # Hard fail if server.js is missing (monorepo structure)
+        if [ ! -f "extracted/standalone/apps/web/server.js" ]; then
+          echo "❌ server.js not found in extracted standalone folder at apps/web/server.js"
+          echo "Checking standalone structure:"
+          ls -la extracted/standalone/ || true
+          find extracted/standalone -name "server.js" -type f || true
+          exit 1
+        fi
+        
+        echo "✅ Successfully extracted complete standalone application"
+
+        # Create deployment bundle
+        cd extracted
+        tar -czf ../deployment.tar.gz .
+        
+    - name: Upload deployment bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: web-deployment-bundle
+        path: deployment.tar.gz
+        retention-days: 1
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [build, extract]
+    if: ${{ inputs.do_deploy }}
+    timeout-minutes: 30
+    
+    steps:
+    - name: Check required secrets
+      run: |
+        M=0
+        [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ] || { echo "Missing SSH_PRIVATE_KEY"; M=1; }
+        [ -n "${{ secrets.VPS_HOST }}" ]       || { echo "Missing VPS_HOST"; M=1; }
+        [ -n "${{ secrets.SITE_URL }}" ]       || { echo "Missing SITE_URL"; M=1; }
+        exit $M
+      
+    - name: Download deployment bundle
+      uses: actions/download-artifact@v4
+      with:
+        name: web-deployment-bundle
+        
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy web app to VPS
+      run: |
+        echo "Deploying web app to ${{ secrets.VPS_HOST }}…"
+        
+        # Upload bundle
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          deployment.tar.gz \
+          apiportfolio@${{ secrets.VPS_HOST }}:/tmp/web-deployment-${{ github.sha }}.tar.gz
+          
+        # Deploy on VPS
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
+          set -euo pipefail
+          
+          echo '🚀 Starting web app deployment...'
+          
+          # Create deployment directory
+          mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
+          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
+          
+          # Stop existing web processes (be specific to avoid stopping other services)
+          echo '🔄 Stopping existing web processes...'
+          pkill -f 'node.*server.js' || true
+          pkill -f 'node.*standalone' || true
+          sleep 2
+          
+          # Backup current deployment (if exists)
+          if [ -d standalone ]; then
+            echo '📦 Backing up current deployment...'
+            mv standalone standalone.bak.\$(date +%s) || true
+          fi
+          
+          # Extract new deployment
+          echo '📂 Extracting new web deployment...'
+          tar -xzf /tmp/web-deployment-${{ github.sha }}.tar.gz
+          rm /tmp/web-deployment-${{ github.sha }}.tar.gz
+          
+          # Verify the extracted bundle with detailed debugging
+          echo '🔍 Checking extracted bundle:'
+          ls -la
+          
+          echo '🔍 Checking if standalone directory exists:'
+          ls -la standalone/ || echo 'No standalone directory found'
+          
+          echo '🔍 Looking for server.js files in current directory:'
+          find . -name 'server.js' -type f || echo 'No server.js files found'
+          
+          if [ ! -f 'standalone/apps/web/server.js' ]; then
+            echo '❌ standalone/apps/web/server.js missing from deployment bundle'
+            echo 'Available files in current directory:'
+            find . -name '*.js' -type f | head -10 || true
+            echo 'Directory structure of standalone (if exists):'
+            find standalone -type f | head -20 || echo 'standalone directory not found'
+            echo 'Full directory structure:'
+            find . -maxdepth 3 -type d || true
+            exit 1
+          fi
+          
+          echo '✅ Standalone server found at standalone/apps/web/server.js'
+          
+          # Set production environment
+          export NODE_ENV=production
+          export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
+          export NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net
+          export PORT=3000
+          export HOSTNAME=localhost
+          
+          # Verify Node.js version (Next.js 15 requires >= 18.17)
+          echo '🔍 Node.js version:'
+          node -v
+          
+          # Start the standalone application directly
+          echo '🎯 Starting standalone Next.js application...'
+          nohup /usr/bin/node standalone/apps/web/server.js > /tmp/portfolio-web.log 2>&1 & echo \$! > /tmp/portfolio-web.pid
+          
+          # Wait for startup
+          sleep 5
+          
+          # Check if process is running
+          if kill -0 \$(cat /tmp/portfolio-web.pid) 2>/dev/null; then
+            echo '✅ Web application started successfully with PID:' \$(cat /tmp/portfolio-web.pid)
+            echo '📋 Last few log lines:'
+            tail -10 /tmp/portfolio-web.log
+          else
+            echo '❌ Web application failed to start, showing full logs:'
+            cat /tmp/portfolio-web.log
+            exit 1
+          fi
+          
+          echo '🎉 Web deployment completed successfully!'
+        "
+        
+    - name: Verify web deployment
+      run: |
+        echo "Waiting for web application to start..."
+        sleep 10
+        curl -f -s -o /dev/null ${{ secrets.SITE_URL }} && echo "✅ Web app is accessible!" || echo "❌ Web app check failed"
