@@ -71,25 +71,25 @@ jobs:
         }
         EOF
         
-        # Create deployment archive
-        tar -czf deployment.tar.gz \
-          apps/web/.next \
-          apps/web/public \
-          apps/web/package.json \
-          apps/web/next.config.js \
-          app.js \
-          ecosystem.config.js \
-          deploy.sh \
-          --exclude=node_modules \
-          --exclude=.git \
-          --exclude=.env.local
+        # Create temporary directory for deployment files
+        mkdir -p temp-deploy
         
-        # Add production package.json as package.json
-        tar -rf deployment.tar.gz --transform 's/production-package.json/package.json/' production-package.json
+        # Copy files with proper structure
+        cp -r apps/web/.next temp-deploy/ 2>/dev/null || echo "Warning: .next not found"
+        cp -r apps/web/public temp-deploy/ 2>/dev/null || echo "Warning: public not found"
+        cp apps/web/package.json temp-deploy/web-package.json 2>/dev/null || echo "Warning: web package.json not found"
+        cp apps/web/next.config.js temp-deploy/ 2>/dev/null || echo "Warning: next.config.js not found"
+        cp app.js temp-deploy/
+        cp ecosystem.config.js temp-deploy/ 2>/dev/null || echo "Warning: ecosystem.config.js not found"
+        cp production-package.json temp-deploy/package.json
         
-        # Compress the final archive
-        gzip deployment.tar
-        mv deployment.tar.gz deployment.tar.gz
+        # Create archive from temp directory
+        cd temp-deploy
+        tar --exclude='node_modules' --exclude='.git' --exclude='.env.local' -czf ../deployment.tar.gz *
+        cd ..
+        
+        # Clean up
+        rm -rf temp-deploy production-package.json
         
         # Verify archive contents
         echo "Deployment package contents:"
@@ -140,15 +140,35 @@ jobs:
           rm deployment.tar.gz
 
           # Create directory structure
-          mkdir -p logs
+          mkdir -p logs apps/web
+
+          # Move files to correct locations for monorepo structure
+          if [ -d ".next" ]; then
+            mv .next apps/web/
+          fi
+          if [ -d "public" ]; then
+            mv public apps/web/
+          fi
+          if [ -f "web-package.json" ]; then
+            mv web-package.json apps/web/package.json
+          fi
+          if [ -f "next.config.js" ]; then
+            mv next.config.js apps/web/
+          fi
 
           # Install Node.js if not present
           if ! command -v node &> /dev/null; then
+            echo "Installing Node.js..."
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
             sudo dnf install nodejs -y
           fi
 
+          # Verify Node.js version
+          node --version
+          npm --version
+
           # Install production dependencies
+          echo "Installing dependencies..."
           npm ci --production --silent
 
           # Stop any existing Node.js processes on port 3000
@@ -162,13 +182,12 @@ jobs:
             exit 1
           }
 
-          # Check if app.js exists
+          # Check if app.js exists and test syntax
           if [ -f "app.js" ]; then
             echo "✅ app.js found"
-            
-            # Test app.js syntax
             node -c app.js && echo "✅ app.js syntax valid" || {
               echo "❌ app.js syntax error"
+              cat app.js
               exit 1
             }
           else
@@ -177,8 +196,15 @@ jobs:
             exit 1
           fi
 
+          # Set proper file permissions
+          chmod +x app.js
+          chmod -R 755 apps/web/
+          
           echo "🚀 Application configured successfully"
-          echo "📋 Plesk should now be able to start the Node.js application"
+          echo "� Files deployed:"
+          ls -la | head -10
+          echo "📁 Web app files:"
+          ls -la apps/web/ | head -5 2>/dev/null || echo "No apps/web directory"
 
     - name: ✅ Verify deployment
       uses: appleboy/ssh-action@v1.0.0
