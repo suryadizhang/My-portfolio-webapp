@@ -1,11 +1,34 @@
 import type { Config } from 'tailwindcss'
 
-const config: Config = {
+const config: Config & { safelist?: any[] } = {
   content: [
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/lib/**/*.{js,ts,jsx,tsx,mdx}',
     '../../packages/ui/src/**/*.{js,ts,jsx,tsx,mdx}',
+  ],
+  safelist: [
+    // Commonly used classes that might be purged in production
+    'text-slate-900',
+    'text-slate-700',
+    'text-slate-600',
+    'text-slate-500',
+    'underline',
+    'underline-offset-4',
+    'bg-white',
+    'text-white',
+    'antialiased',
+    'font-medium',
+    'text-sm',
+    'mt-4',
+    'flex',
+    'gap-3',
+    // Dynamic color utilities
+    { pattern: /(text|bg|border)-(slate|gray|neutral|red|orange|amber|yellow|green|teal|blue|indigo|violet|purple|pink)-(50|100|200|300|400|500|600|700|800|900)/ },
+    // Grid utilities that might be dynamic
+    { pattern: /(col|row)-span-(1|2|3|4|5|6|7|8|9|10|11|12)/ },
+    // Common spacing that might be dynamic
+    { pattern: /(m|p)(t|r|b|l|x|y)?-(0|1|2|3|4|5|6|8|10|12|16|20|24|32|40|48|56|64|72|80|96)/ },
   ],
   theme: {
     extend: {
