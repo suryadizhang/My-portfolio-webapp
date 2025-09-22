@@ -193,6 +193,9 @@ jobs:
           if [ -d '.next' ]; then
             echo '📦 Backing up current deployment...'
             mv .next .next.backup.\$(date +%s) || true
+          fi
+          if [ -d 'public' ]; then
+            echo '📦 Backing up public directory...'
             mv public public.backup.\$(date +%s) || true
           fi
           
