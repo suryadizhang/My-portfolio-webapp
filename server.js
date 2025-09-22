@@ -21,7 +21,7 @@ console.log(`📍 Server will run on http://${hostname}:${port}`);
 
 // In production, try to use the standalone server first
 if (!dev && process.env.NODE_ENV === 'production') {
-  const standaloneServer = path.join(__dirname, '.next/standalone/server.js');
+  const standaloneServer = path.join(__dirname, '.next/standalone/apps/web/server.js');
   
   if (fs.existsSync(standaloneServer)) {
     console.log('🎯 Using Next.js standalone server...');

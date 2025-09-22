@@ -38,14 +38,16 @@ try {
         throw "Standalone output not found"
     }
 
-    # Verify server.js exists
-    if (-not (Test-Path ".validation/standalone/server.js")) {
-        Write-Host "❌ server.js not found in standalone output!" -ForegroundColor Red
+    # Verify server.js exists (monorepo structure)
+    if (-not (Test-Path ".validation/standalone/apps/web/server.js")) {
+        Write-Host "❌ server.js not found in standalone output at apps/web/server.js!" -ForegroundColor Red
         Write-Host "Contents of .validation/standalone:" -ForegroundColor Yellow
         if (Test-Path ".validation/standalone") {
             Get-ChildItem -Recurse ".validation/standalone" | ForEach-Object { Write-Host $_.FullName }
         }
-        throw "server.js missing"
+        Write-Host "Looking for server.js files:"
+        Get-ChildItem -Recurse ".validation" -Name "server.js" -ErrorAction SilentlyContinue | Write-Host
+        throw "server.js missing at expected monorepo path"
     }
 
     Write-Host "✅ server.js found in standalone output" -ForegroundColor Green

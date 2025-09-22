@@ -42,11 +42,13 @@ else
     exit 1
 fi
 
-# Verify server.js exists
-if [ ! -f ".validation/standalone/server.js" ]; then
-    echo "❌ server.js not found in standalone output!"
+# Verify server.js exists (monorepo structure)
+if [ ! -f ".validation/standalone/apps/web/server.js" ]; then
+    echo "❌ server.js not found in standalone output at apps/web/server.js!"
     echo "Contents of .validation/standalone:"
     find .validation/standalone -type f 2>/dev/null || true
+    echo "Looking for server.js files:"
+    find .validation -name "server.js" -type f 2>/dev/null || true
     exit 1
 fi
 

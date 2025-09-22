@@ -151,10 +151,12 @@ jobs:
         echo "� Verifying extracted standalone application:"
         find extracted -maxdepth 3 -type f | sort
         
-        # Hard fail if server.js is missing
-        if [ ! -f "extracted/standalone/server.js" ]; then
-          echo "❌ server.js not found in extracted standalone folder"
+        # Hard fail if server.js is missing (monorepo structure)
+        if [ ! -f "extracted/standalone/apps/web/server.js" ]; then
+          echo "❌ server.js not found in extracted standalone folder at apps/web/server.js"
+          echo "Checking standalone structure:"
           ls -la extracted/standalone/ || true
+          find extracted/standalone -name "server.js" -type f || true
           exit 1
         fi
         
@@ -224,14 +226,16 @@ jobs:
           echo '🔍 Checking extracted bundle:'
           ls -la
           
-          if [ ! -f 'standalone/server.js' ]; then
-            echo '❌ standalone/server.js missing from deployment bundle'
+          if [ ! -f 'standalone/apps/web/server.js' ]; then
+            echo '❌ standalone/apps/web/server.js missing from deployment bundle'
             echo 'Available files:'
             find . -name '*.js' -type f | head -10 || true
+            echo 'Checking standalone structure:'
+            find standalone -name "server.js" -type f || true
             exit 1
           fi
           
-          echo '✅ Standalone server found at standalone/server.js'
+          echo '✅ Standalone server found at standalone/apps/web/server.js'
           
           # Set production environment
           export NODE_ENV=production
@@ -246,7 +250,7 @@ jobs:
           
           # Start the standalone application directly
           echo '🎯 Starting standalone Next.js application...'
-          nohup /usr/bin/node standalone/server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
+          nohup /usr/bin/node standalone/apps/web/server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
           
           # Wait for startup
           sleep 5
