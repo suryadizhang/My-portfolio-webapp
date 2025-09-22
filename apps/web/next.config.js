@@ -48,17 +48,15 @@ const nextConfig = {
   },
   
   // Bundle optimization
-  webpack: (config, { dev, isServer }) => {
-    // Bundle analyzer
-    if (!dev && !isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        '@': require('path').resolve(__dirname, 'src'),
-      }
+  webpack: (config, { dev }) => {
+    // Alias works on both server and client
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@': require('path').resolve(__dirname, 'src'),
     }
 
     // Tree shaking optimizations
-    if (!dev) {
+    if (!dev && config.optimization) {
       config.optimization.usedExports = true
       config.optimization.sideEffects = false
     }
