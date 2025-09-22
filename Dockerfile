@@ -21,12 +21,11 @@ FROM node:20-alpine AS builder
 WORKDIR /repo
 ENV NEXT_TELEMETRY_DISABLED=1
 
-# Bring installed node_modules and then the source
-COPY --from=deps /repo/node_modules ./node_modules
+# Copy source first, then overlay node_modules to avoid overwriting
 COPY . .
+COPY --from=deps /repo/node_modules ./node_modules
 
-# Build the web app from the correct directory
-# The node_modules are available at /repo/node_modules which Next.js will find
+# Change to apps/web directory and run build there for proper path resolution
 WORKDIR /repo/apps/web
 RUN npm run build
 

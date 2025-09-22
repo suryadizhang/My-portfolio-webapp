@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { z } from 'zod'
-import { searchContent } from '../../../../../lib/rag/search'
+import { searchContent } from '@/lib/rag/search'
 
 // Request validation schema
 const ChatRequestSchema = z.object({
