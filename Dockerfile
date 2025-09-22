@@ -14,6 +14,9 @@ COPY packages/ packages/
 # Install dependencies for all workspaces
 RUN npm ci
 
+# Build workspace packages that web depends on
+RUN npm run build --workspace=@portfolio/ui --workspace=@portfolio/utils --workspace=@portfolio/config
+
 ############################
 # 2) Build apps/web
 ############################
@@ -25,7 +28,8 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
 COPY --from=deps /repo/node_modules ./node_modules
 
-# Change to apps/web directory and run build there for proper path resolution
+# Create symlink so apps/web can find node_modules and run build from apps/web
+RUN ln -sf /repo/node_modules /repo/apps/web/node_modules
 WORKDIR /repo/apps/web
 RUN npm run build
 
