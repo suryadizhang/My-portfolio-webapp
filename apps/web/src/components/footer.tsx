@@ -1,45 +1,75 @@
-import { Github, Linkedin, Mail } from 'lucide-react'
-
-export function Footer() {
-  const currentYear = new Date().getFullYear()
-  
+export default function Footer() {
   return (
-    <footer className="border-t border-border">
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
-          <div className="text-sm text-muted-foreground">
-            © {currentYear} Suryadi Zhang. All rights reserved.
+    <footer className="border-t bg-slate-50">
+      <div className="mx-auto max-w-5xl px-6 py-12">
+        <div className="grid gap-8 md:grid-cols-2">
+          {/* Left side - Brand */}
+          <div>
+            <h3 className="text-lg font-semibold">Suryadi Zhang</h3>
+            <p className="mt-2 text-sm text-slate-600">
+              Full-Stack Software Engineer building responsive apps and robust APIs with CI/CD.
+            </p>
+            <p className="mt-2 text-sm text-slate-500">
+              Fremont, CA • Available for hire
+            </p>
           </div>
           
-          <div className="flex items-center space-x-4">
-            <a 
-              href="https://github.com/suryadizhang" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Github className="h-5 w-5" />
-              <span className="sr-only">GitHub</span>
-            </a>
-            <a 
-              href="https://www.linkedin.com/in/suryadi-zhang/" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Linkedin className="h-5 w-5" />
-              <span className="sr-only">LinkedIn</span>
-            </a>
-            <a 
-              href="mailto:suryadizhang86@gmail.com"
-              className="text-muted-foreground hover:text-primary transition-colors"
-            >
-              <Mail className="h-5 w-5" />
-              <span className="sr-only">Email</span>
-            </a>
+          {/* Right side - Links */}
+          <div className="grid gap-6 sm:grid-cols-2">
+            <div>
+              <h4 className="text-sm font-medium text-slate-900">Connect</h4>
+              <div className="mt-3 space-y-2">
+                <a 
+                  href="mailto:suryadizhang86@gmail.com" 
+                  className="block text-sm text-slate-600 hover:text-slate-900"
+                >
+                  Email
+                </a>
+                <a 
+                  href="https://linkedin.com/in/suryadi-zhang" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-sm text-slate-600 hover:text-slate-900"
+                >
+                  LinkedIn
+                </a>
+                <a 
+                  href="https://github.com/suryadizhang" 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="block text-sm text-slate-600 hover:text-slate-900"
+                >
+                  GitHub
+                </a>
+              </div>
+            </div>
+            
+            <div>
+              <h4 className="text-sm font-medium text-slate-900">Explore</h4>
+              <div className="mt-3 space-y-2">
+                <a href="/projects" className="block text-sm text-slate-600 hover:text-slate-900">
+                  Projects
+                </a>
+                <a href="/about" className="block text-sm text-slate-600 hover:text-slate-900">
+                  About
+                </a>
+                <a href="/contact" className="block text-sm text-slate-600 hover:text-slate-900">
+                  Contact
+                </a>
+                <a href="/api/resume/download" className="block text-sm text-slate-600 hover:text-slate-900">
+                  Resume
+                </a>
+              </div>
+            </div>
           </div>
+        </div>
+        
+        <div className="mt-8 border-t pt-8 text-center">
+          <p className="text-xs text-slate-500">
+            © 2025 Suryadi Zhang. Built with Next.js, TypeScript, and Tailwind CSS.
+          </p>
         </div>
       </div>
     </footer>
-  )
+  );
 }

@@ -1,31 +1,26 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { ThemeProvider } from '../components/theme-provider'
-import { Header } from '../components/header'
-import { Footer } from '../components/footer'
+import Footer from '../components/footer'
 import { ChatDock } from '../components/chat/ChatDock'
 
 const inter = Inter({ subsets: ['latin'] })
 
-export const metadata: Metadata = {
-  title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
-  description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  keywords: ['Software Engineer', 'Full-Stack Developer', 'React', 'Next.js', 'TypeScript', 'Python', 'FastAPI', 'Postgres'],
-  authors: [{ name: 'Suryadi Zhang' }],
+export const metadata = {
+  title: "Suryadi Zhang — Full-Stack Software Engineer",
+  description:
+    "React/Next.js + Python/FastAPI + Postgres. Live booking apps, solid APIs, and CI/CD.",
   openGraph: {
-    title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
-    description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
-    type: 'website',
-    locale: 'en_US',
+    title: "Suryadi Zhang — Full-Stack Software Engineer",
+    description:
+      "Live booking + admin, API design, and CI/CD with GitHub Actions.",
+    url: "https://suryadizhang.dev",
+    siteName: "Suryadi Zhang",
+    images: [{ url: "/og.png", width: 1200, height: 630 }],
+    locale: "en_US",
+    type: "website",
   },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Suryadi Zhang - Software Engineer (Full-Stack)',
-    description: 'Full-Stack Software Engineer delivering responsive web apps and robust APIs with React/Next.js, Python/FastAPI, and Postgres.',
-  },
-}
+};
 
 export default function RootLayout({
   children,
@@ -33,24 +28,14 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <div className="min-h-screen flex flex-col">
-            <Header />
-            <main className="flex-1">
-              {children}
-            </main>
-            <Footer />
-            <ChatDock />
-          </div>
-        </ThemeProvider>
+    <html lang="en">
+      <body className={`${inter.className} antialiased bg-white text-slate-900`}>
+        <div className="min-h-screen flex flex-col">
+          {children}
+          <Footer />
+          <ChatDock />
+        </div>
       </body>
     </html>
-  )
+  );
 }

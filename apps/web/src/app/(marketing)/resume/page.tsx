@@ -24,14 +24,26 @@ export default function ResumePage() {
         {/* Action buttons */}
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Button asChild>
-            <a href={`mailto:${profile.contact.email}?subject=Resume Request`}>
-              <Mail className="h-4 w-4 mr-2" />
-              Email me for resume
+            <a href="/api/resume/download?format=pdf" download="Suryadi_Zhang_Resume.pdf">
+              <FileText className="h-4 w-4 mr-2" />
+              Download PDF
+            </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href="/api/resume/download?format=json" download="Suryadi_Zhang_Resume.json">
+              <FileText className="h-4 w-4 mr-2" />
+              Download JSON
             </a>
           </Button>
           <Button variant="outline">
             <Eye className="h-4 w-4 mr-2" />
             View Online
+          </Button>
+          <Button variant="secondary" asChild>
+            <a href={`mailto:${profile.contact.email}?subject=Resume Request`}>
+              <Mail className="h-4 w-4 mr-2" />
+              Email Request
+            </a>
           </Button>
         </div>
       </div>
@@ -145,16 +157,30 @@ export default function ResumePage() {
 
         {/* Download CTA */}
         <div className="text-center mt-16 p-8 bg-primary/5 rounded-lg border border-primary/20">
-          <h3 className="text-xl font-semibold mb-4">Want the Complete Resume?</h3>
+          <h3 className="text-xl font-semibold mb-4">Download Resume</h3>
           <p className="text-muted-foreground mb-6">
-            Email me to receive the full PDF version with detailed work history, education, and project details.
+            Get a copy of my complete resume in your preferred format, or email me for additional information.
           </p>
-          <Button asChild>
-            <a href={`mailto:${profile.contact.email}?subject=Resume Request&body=Hi ${profile.name}, I'd like to request a copy of your resume.`}>
-              <Mail className="h-4 w-4 mr-2" />
-              Request Full Resume
-            </a>
-          </Button>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button asChild>
+              <a href="/api/resume/download?format=pdf" download="Suryadi_Zhang_Resume.pdf">
+                <FileText className="h-4 w-4 mr-2" />
+                Download PDF
+              </a>
+            </Button>
+            <Button variant="outline" asChild>
+              <a href="/api/resume/download?format=json" download="Suryadi_Zhang_Resume.json">
+                <FileText className="h-4 w-4 mr-2" />
+                Download JSON
+              </a>
+            </Button>
+            <Button variant="secondary" asChild>
+              <a href={`mailto:${profile.contact.email}?subject=Resume Request&body=Hi ${profile.name}, I'd like to request a copy of your resume.`}>
+                <Mail className="h-4 w-4 mr-2" />
+                Email Request
+              </a>
+            </Button>
+          </div>
         </div>
       </div>
     </div>
