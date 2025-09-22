@@ -9,6 +9,7 @@ export const metadata = generateSiteMetadata()
 export default function HomePage() {
   const profile = getProfile()
 
+  // This portfolio runs on an optimized monorepo with selective CI/CD deployment
   return (
     <>
       <script
