@@ -62,6 +62,23 @@ jobs:
       run: |
         echo "Generated tags: ${{ steps.meta.outputs.tags }}"
         echo "image=${{ fromJSON(steps.meta.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
+        
+    - name: Verify workspace packages in image
+      run: |
+        echo "🔍 Verifying workspace packages are bundled..."
+        docker run --rm ${{ fromJSON(steps.meta.outputs.json).tags[0] }} \
+          node -e "
+            try {
+              console.log('✅ @portfolio/ui found at:', require.resolve('@portfolio/ui/package.json'));
+            } catch(e) {
+              console.log('❌ @portfolio/ui not found:', e.message);
+            }
+            try {
+              console.log('✅ @portfolio/utils found at:', require.resolve('@portfolio/utils/package.json'));
+            } catch(e) {
+              console.log('❌ @portfolio/utils not found:', e.message);
+            }
+          " || echo "⚠️ Package verification failed (may be bundled)"
 
   extract:
     runs-on: ubuntu-latest

@@ -15,6 +15,9 @@ if (enableAnalyzer) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Transpile workspace packages so Next.js can bundle them
+  transpilePackages: ['@portfolio/ui', '@portfolio/utils', '@portfolio/config'],
+  
   experimental: {
     mdxRs: true,
   },
