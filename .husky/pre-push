@@ -12,7 +12,7 @@ echo "📦 Step 2/3: Module sanity check..."
 node -e "require.resolve('@portfolio/ui'); require.resolve('@portfolio/utils')" || exit 1
 
 # Optional: Docker smoke test (comment out if Docker Desktop not always running)
-echo "🐳 Step 3/3: Docker smoke test..."
-npm run docker:smoke || exit 1
+echo "🐳 Step 3/3: Docker smoke test (skipped - Docker Desktop not running)..."
+# npm run docker:smoke || exit 1
 
 echo "✅ All pre-push checks passed! Pushing to remote..."
