@@ -28,7 +28,6 @@ const nextConfig = {
   poweredByHeader: false,
   compress: true,
   generateEtags: true,
-  swcMinify: true,
   
   // Performance optimizations
   modularizeImports: {
