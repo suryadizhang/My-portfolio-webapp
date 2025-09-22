@@ -28,6 +28,9 @@ COPY . .
 WORKDIR /repo/apps/web
 RUN npm run build
 
+# Verify standalone output was created
+RUN ls -la .next/ && test -f .next/standalone/server.js || (echo "ERROR: standalone build failed" && exit 1)
+
 # ---------- Runtime ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
@@ -36,11 +39,14 @@ ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Copy standalone output matching expected structure
-COPY --from=builder /repo/apps/web/.next/standalone ./
-COPY --from=builder /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=builder /repo/apps/web/public ./apps/web/public
+# Copy standalone output to expected location
+COPY --from=builder /repo/apps/web/.next/standalone ./standalone
+COPY --from=builder /repo/apps/web/.next/static ./standalone/.next/static
+COPY --from=builder /repo/apps/web/public ./standalone/public
 
-# Next standalone includes a server.js in /app/apps/web
+# Verify server.js is in the expected location
+RUN test -f ./standalone/server.js || (echo "ERROR: server.js not found at ./standalone/server.js" && exit 1)
+
+# Next standalone includes a server.js in /app/standalone
 EXPOSE 3000
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "standalone/server.js"]
