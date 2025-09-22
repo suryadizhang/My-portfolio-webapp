@@ -13,7 +13,7 @@ COPY packages/utils/package.json ./packages/utils/
 COPY apps/web/package.json ./apps/web/
 
 # Install all dependencies including dev dependencies for building
-RUN npm ci --include=dev
+RUN npm ci
 
 # Build stage
 FROM base AS builder
