@@ -53,22 +53,29 @@ jobs:
           --delete \
           ./ apiportfolio@${{ secrets.VPS_HOST }}:/var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs/
           
-        # Install dependencies and setup application on VPS
+        # Setup Node.js environment and deploy application
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
           cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs &&
-          echo 'Installing dependencies...' &&
-          npm install --production &&
-          echo 'Building application on server...' &&
-          npm run build &&
-          echo 'Setting up PM2 process...' &&
-          if pm2 list | grep -q 'portfolio'; then
-            echo 'Restarting existing PM2 process...'
-            pm2 restart portfolio
-          else
-            echo 'Starting new PM2 process...'
-            pm2 start ecosystem.config.js --env production
+          echo 'Setting up Node.js environment...' &&
+          export PATH=\"/usr/bin:/usr/local/bin:\$PATH\" &&
+          echo 'Node.js version:' \$(node --version 2>/dev/null || echo 'Not found in PATH') &&
+          echo 'npm version:' \$(npm --version 2>/dev/null || echo 'Not found in PATH') &&
+          if ! command -v node &> /dev/null; then
+            echo 'Adding Node.js to PATH...' &&
+            export PATH=\"/usr/bin:/usr/local/bin:/opt/nodejs/bin:\$PATH\" &&
+            if ! command -v node &> /dev/null; then
+              echo 'ERROR: Node.js not found. Please install Node.js on the server.' &&
+              exit 1
+            fi
           fi &&
-          pm2 save &&
+          echo 'Installing dependencies...' &&
+          /usr/bin/npm install --production 2>/dev/null || npm install --production &&
+          echo 'Building application...' &&
+          /usr/bin/npm run build 2>/dev/null || npm run build &&
+          echo 'Starting application...' &&
+          pkill -f 'node.*app.js' || true &&
+          nohup /usr/bin/node app.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid &&
+          echo 'Portfolio PID:' \$(cat /tmp/portfolio.pid) &&
           echo 'Deployment completed successfully!'
         "
         
