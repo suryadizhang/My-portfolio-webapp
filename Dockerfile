@@ -26,8 +26,9 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Run the build with proper environment
+# Build the web application with standalone output
 ENV NODE_ENV=production
+ENV NEXT_TELEMETRY_DISABLED=1
 RUN npm run build
 
 # Production stage
@@ -40,16 +41,10 @@ ENV NEXT_TELEMETRY_DISABLED=1
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nextjs
 
-COPY --from=builder /app/apps/web/public ./apps/web/public
-
-# Set the correct permission for prerender cache
-RUN mkdir .next
-RUN chown nextjs:nodejs .next
-
-# Automatically leverage output traces to reduce image size
-# Fix: Use correct monorepo paths where .next is inside apps/web
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
+# Copy the complete standalone build
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/standalone ./standalone
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/.next/static ./standalone/.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/apps/web/public ./standalone/public
 
 USER nextjs
 
@@ -58,5 +53,5 @@ EXPOSE 3000
 ENV PORT=3000
 ENV HOSTNAME="0.0.0.0"
 
-# Use the standalone server for monorepo (located in apps/web)
-CMD ["node", "apps/web/server.js"]
+# Run the standalone server
+CMD ["node", "standalone/server.js"]

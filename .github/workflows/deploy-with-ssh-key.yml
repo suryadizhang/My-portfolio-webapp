@@ -83,100 +83,41 @@ jobs:
         # Check if image exists before pulling
         if ! docker pull ${{ needs.build.outputs.image }}; then
           echo "❌ Image not found: ${{ needs.build.outputs.image }}"
-          echo "🔍 Available images in registry:"
-          docker search ghcr.io/suryadizhang/my-portfolio-webapp || true
           exit 1
         fi
         
         echo "✅ Successfully pulled image: ${{ needs.build.outputs.image }}"
         
-        # Debug: Inspect the Docker image structure
-        echo "🔍 Inspecting Docker image contents:"
-        docker run --rm ${{ needs.build.outputs.image }} find /app -name "server.js" -type f || true
-        docker run --rm ${{ needs.build.outputs.image }} ls -la /app/apps/web/ || true
-        docker run --rm ${{ needs.build.outputs.image }} ls -la /app/apps/web/.next/ || true
-        
-        # Extract the monorepo application files properly
+        # Create a temporary container and extract the complete standalone runtime
+        echo "🔍 Extracting complete standalone application..."
+        CID=$(docker create ${{ needs.build.outputs.image }})
         mkdir -p extracted
-        docker run --rm -v $(pwd)/extracted:/output ${{ needs.build.outputs.image }} sh -c "
-          echo 'Debug: Contents of /app before copy:'
-          find /app -type f -name '*.js' | head -20
-          
-          # Copy the standalone build (already at root in container)
-          cp -r /app/apps /output/ &&
-          cp -r /app/node_modules /output/ || true &&
-          cp /app/package.json /output/ || true &&
-          # Copy the .next static files and standalone server
-          mkdir -p /output/apps/web/.next &&
-          cp -r /app/apps/web/.next/static /output/apps/web/.next/ || true &&
-          # Copy the standalone server if it exists
-          if [ -f '/app/apps/web/.next/standalone/server.js' ]; then
-            echo 'Found standalone server.js, copying...'
-            cp /app/apps/web/.next/standalone/server.js /output/apps/web/
-          fi
-        "
         
-        # Debug: Show what we extracted
-        echo "🔍 Contents of extracted directory:"
-        find extracted -name "server.js" -type f || true
-        ls -la extracted/apps/web/ || true
+        # Copy the complete standalone folder from the Docker image
+        docker cp "$CID:/app/standalone" extracted/ 2>/dev/null || {
+          echo "❌ Failed to copy standalone folder from Docker image"
+          echo "🔍 Inspecting Docker image structure:"
+          docker run --rm ${{ needs.build.outputs.image }} find /app -type d -name "*standalone*" || true
+          docker run --rm ${{ needs.build.outputs.image }} find /app -name "server.js" -type f || true
+          docker rm -f "$CID"
+          exit 1
+        }
         
-        # Create a production server script that handles monorepo structure
-        cat > extracted/server.js << 'EOF'
-        #!/usr/bin/env node
-        const path = require('path');
-        const fs = require('fs');
-
-        const hostname = process.env.HOSTNAME || 'localhost';
-        const port = parseInt(process.env.PORT || '3000', 10);
-
-        console.log('🚀 Starting Next.js production server...');
-        console.log(`📍 Server will run on http://${hostname}:${port}`);
-
-        // Check multiple possible server locations
-        const serverPaths = [
-          path.join(__dirname, 'apps/web/server.js'),
-          path.join(__dirname, 'apps/web/.next/standalone/server.js'),
-          path.join(__dirname, 'apps/web/.next/standalone/apps/web/server.js')
-        ];
-
-        let serverPath = null;
-        for (const checkPath of serverPaths) {
-          if (fs.existsSync(checkPath)) {
-            serverPath = checkPath;
-            console.log('🎯 Found Next.js server at:', checkPath);
-            break;
-          }
-        }
-
-        if (serverPath) {
-          console.log('🎯 Using Next.js standalone server...');
-          
-          // Set environment variables for standalone server
-          process.env.HOSTNAME = hostname;
-          process.env.PORT = port.toString();
-          
-          // Require the standalone server
-          require(serverPath);
-        } else {
-          console.error('❌ Server not found in any expected location');
-          console.log('🔍 Available files:');
-          console.log(fs.readdirSync(__dirname));
-          if (fs.existsSync(path.join(__dirname, 'apps'))) {
-            console.log('Apps directory:', fs.readdirSync(path.join(__dirname, 'apps')));
-            if (fs.existsSync(path.join(__dirname, 'apps/web'))) {
-              console.log('Web directory:', fs.readdirSync(path.join(__dirname, 'apps/web')));
-              if (fs.existsSync(path.join(__dirname, 'apps/web/.next'))) {
-                console.log('.next directory:', fs.readdirSync(path.join(__dirname, 'apps/web/.next')));
-                if (fs.existsSync(path.join(__dirname, 'apps/web/.next/standalone'))) {
-                  console.log('standalone directory:', fs.readdirSync(path.join(__dirname, 'apps/web/.next/standalone')));
-                }
-              }
-            }
-          }
-          process.exit(1);
-        }
-        EOF
+        # Clean up temporary container
+        docker rm -f "$CID"
+        
+        # Verify we have the complete standalone runtime
+        echo "🔍 Verifying extracted standalone application:"
+        find extracted -maxdepth 3 -type f | sort
+        
+        # Verify server.js exists
+        if [ ! -f "extracted/standalone/server.js" ]; then
+          echo "❌ server.js not found in extracted standalone folder"
+          ls -la extracted/standalone/ || true
+          exit 1
+        fi
+        
+        echo "✅ Successfully extracted complete standalone application"
         
         # Create deployment bundle
         cd extracted
@@ -227,20 +168,10 @@ jobs:
           mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
           cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
           
-          # Backup current deployment
-          if [ -d '.next' ]; then
-            echo '📦 Backing up current deployment...'
-            mv .next .next.backup.\$(date +%s) || true
-          fi
-          if [ -d 'public' ]; then
-            echo '📦 Backing up public directory...'
-            mv public public.backup.\$(date +%s) || true
-          fi
-          
           # Stop existing Node.js processes
           echo '🔄 Stopping existing processes...'
           pkill -f 'node.*server.js' || true
-          pkill -f 'node.*app.js' || true
+          pkill -f 'node.*standalone' || true
           sleep 2
           
           # Extract new deployment
@@ -248,29 +179,20 @@ jobs:
           tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
           rm /tmp/deployment-${{ github.sha }}.tar.gz
           
-          # Verify the structure after extraction
+          # Verify the standalone application
           echo '🔍 Listing extracted contents:'
           ls -la || true
           
-          if [ -f 'apps/web/server.js' ]; then
-            echo '✅ Docker-extracted server found at apps/web/server.js'
-          elif [ -f 'apps/web/.next/standalone/server.js' ]; then
-            echo '✅ Standalone server found at apps/web/.next/standalone/server.js'
-            # Copy it to the expected location
-            cp apps/web/.next/standalone/server.js apps/web/server.js
-          elif [ -f 'server.js' ]; then
-            echo '✅ Root server.js found'
-          else
-            echo '❌ Server not found, showing directory structure:'
+          if [ ! -f 'standalone/server.js' ]; then
+            echo '❌ Standalone server.js not found'
+            echo 'Available files:'
             find . -name 'server.js' -type f || true
-            echo 'Apps/web contents:'
-            ls -la apps/web/ || true
-            echo 'Apps/web/.next contents:'
-            ls -la apps/web/.next/ || true
-            echo 'Apps/web/.next/standalone contents:'
-            ls -la apps/web/.next/standalone/ || true
+            echo 'Standalone directory contents:'
+            ls -la standalone/ || true
             exit 1
           fi
+          
+          echo '✅ Standalone server found at standalone/server.js'
           
           # Set production environment
           export NODE_ENV=production
@@ -279,9 +201,13 @@ jobs:
           export PORT=3000
           export HOSTNAME=localhost
           
-          # Start the application
-          echo '🎯 Starting application...'
-          nohup /usr/bin/node server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
+          # Verify Node.js version (Next.js 15 requires >= 18.17)
+          echo '🔍 Node.js version:'
+          node -v
+          
+          # Start the standalone application directly
+          echo '🎯 Starting standalone Next.js application...'
+          nohup /usr/bin/node standalone/server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
           
           # Wait for startup
           sleep 5
