@@ -39,28 +39,60 @@ jobs:
 
     - name: 📂 Create deployment package
       run: |
-        # Navigate to the web app directory
-        cd apps/web
+        # Create a combined package.json for production
+        echo "Creating production package.json..."
+        cat > production-package.json << 'EOF'
+        {
+          "name": "portfolio-production",
+          "version": "0.1.0",
+          "private": true,
+          "scripts": {
+            "start": "node app.js",
+            "build": "echo 'Build already completed'"
+          },
+          "dependencies": {
+            "next": "^15.0.0",
+            "react": "^18.3.1",
+            "react-dom": "^18.3.1",
+            "@mdx-js/loader": "^3.0.0",
+            "@mdx-js/react": "^3.0.0",
+            "@next/mdx": "^15.0.0",
+            "@tailwindcss/typography": "^0.5.10",
+            "gray-matter": "^4.0.3",
+            "lucide-react": "^0.447.0",
+            "next-mdx-remote": "^5.0.0",
+            "next-themes": "^0.2.1",
+            "pdfjs-dist": "^5.3.93"
+          },
+          "engines": {
+            "node": ">=18.0.0",
+            "npm": ">=8.0.0"
+          }
+        }
+        EOF
         
-        # Create deployment archive with correct paths
-        tar -czf ../../deployment.tar.gz \
-          .next \
-          public \
-          package.json \
+        # Create deployment archive
+        tar -czf deployment.tar.gz \
+          apps/web/.next \
+          apps/web/public \
+          apps/web/package.json \
+          apps/web/next.config.js \
+          app.js \
+          ecosystem.config.js \
+          deploy.sh \
           --exclude=node_modules \
           --exclude=.git \
           --exclude=.env.local
         
-        # Add root level files
-        cd ../../
-        tar -rzf deployment.tar.gz \
-          ecosystem.config.js \
-          deploy.sh \
-          server.js \
-          package.json \
-          .env.production
+        # Add production package.json as package.json
+        tar -rf deployment.tar.gz --transform 's/production-package.json/package.json/' production-package.json
+        
+        # Compress the final archive
+        gzip deployment.tar
+        mv deployment.tar.gz deployment.tar.gz
         
         # Verify archive contents
+        echo "Deployment package contents:"
         tar -tzf deployment.tar.gz | head -20
 
     - name: 🚀 Deploy to VPS
@@ -107,41 +139,46 @@ jobs:
           tar -xzf deployment.tar.gz
           rm deployment.tar.gz
 
+          # Create directory structure
+          mkdir -p logs
+
           # Install Node.js if not present
           if ! command -v node &> /dev/null; then
             curl -fsSL https://rpm.nodesource.com/setup_20.x | sudo bash -
             sudo dnf install nodejs -y
           fi
 
-          # Install PM2 if not present
-          if ! command -v pm2 &> /dev/null; then
-            sudo npm install -g pm2
+          # Install production dependencies
+          npm ci --production --silent
+
+          # Stop any existing Node.js processes on port 3000
+          sudo pkill -f "node.*3000" || true
+          sleep 2
+
+          # Test the application
+          echo "Testing Node.js application..."
+          node -e "console.log('✅ Node.js is working'); process.exit(0);" || {
+            echo "❌ Node.js test failed"
+            exit 1
+          }
+
+          # Check if app.js exists
+          if [ -f "app.js" ]; then
+            echo "✅ app.js found"
+            
+            # Test app.js syntax
+            node -c app.js && echo "✅ app.js syntax valid" || {
+              echo "❌ app.js syntax error"
+              exit 1
+            }
+          else
+            echo "❌ app.js not found"
+            ls -la
+            exit 1
           fi
 
-          # Install production dependencies (only in apps/web if it exists, or root)
-          if [ -f "apps/web/package.json" ]; then
-            cd apps/web
-            npm ci --production --silent
-            cd ../..
-          else
-            npm ci --production --silent
-          fi
-
-          # Update PM2 ecosystem config with correct paths
-          if [ -f "ecosystem.config.js" ]; then
-            sed -i "s|/var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs|$(pwd)|g" ecosystem.config.js
-            
-            # Start/restart PM2 process
-            pm2 restart ecosystem.config.js || pm2 start ecosystem.config.js
-            
-            # Save PM2 configuration
-            pm2 save
-            
-            # Show status
-            pm2 status
-          else
-            echo "⚠️ ecosystem.config.js not found"
-          fi
+          echo "🚀 Application configured successfully"
+          echo "📋 Plesk should now be able to start the Node.js application"
 
     - name: ✅ Verify deployment
       uses: appleboy/ssh-action@v1.0.0
