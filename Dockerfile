@@ -6,13 +6,13 @@
 FROM node:20-alpine AS deps
 WORKDIR /repo
 
-# Copy manifests (root + all workspaces)
+# Copy root manifests and workspace structure
 COPY package.json package-lock.json ./
-COPY apps/*/package.json apps/
-COPY packages/*/package.json packages/
+COPY apps/ apps/
+COPY packages/ packages/
 
-# Install ALL workspaces (root + packages + apps)
-RUN npm ci --workspaces --include-workspace-root
+# Install dependencies for all workspaces
+RUN npm ci
 
 ############################
 # 2) Build apps/web
