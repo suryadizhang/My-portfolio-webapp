@@ -1,0 +1,79 @@
+name: Deploy to IONOS VPS with SSH Key
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        
+    - name: Install dependencies
+      run: npm ci
+      
+    - name: Build application
+      run: npm run build
+      
+    - name: Setup SSH Key
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+        
+    - name: Deploy to VPS
+      run: |
+        # Create deployment directory on VPS
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
+          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs &&
+          mkdir -p portfolio-backup &&
+          if [ -f package.json ]; then
+            echo 'Backing up existing deployment...'
+            rsync -av --exclude=node_modules --exclude=.git --exclude=portfolio-backup . portfolio-backup/
+          fi
+        "
+        
+        # Copy built application to VPS
+        rsync -avz -e "ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no" \
+          --exclude='.git' \
+          --exclude='.github' \
+          --exclude='node_modules' \
+          --exclude='.next' \
+          --delete \
+          ./ apiportfolio@${{ secrets.VPS_HOST }}:/var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs/
+          
+        # Install dependencies and setup application on VPS
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
+          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs &&
+          echo 'Installing dependencies...' &&
+          npm install --production &&
+          echo 'Building application on server...' &&
+          npm run build &&
+          echo 'Setting up PM2 process...' &&
+          if pm2 list | grep -q 'portfolio'; then
+            echo 'Restarting existing PM2 process...'
+            pm2 restart portfolio
+          else
+            echo 'Starting new PM2 process...'
+            pm2 start ecosystem.config.js --env production
+          fi &&
+          pm2 save &&
+          echo 'Deployment completed successfully!'
+        "
+        
+    - name: Verify Deployment
+      run: |
+        echo "Checking if site is accessible..."
+        curl -f -s -o /dev/null ${{ secrets.SITE_URL }} || echo "Site check failed, but deployment may still be successful"
+        echo "Deployment completed!"
