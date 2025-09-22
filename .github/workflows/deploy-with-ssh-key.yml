@@ -77,14 +77,50 @@ jobs:
         docker login ghcr.io -u ${{ github.actor }} -p ${{ secrets.GITHUB_TOKEN }}
         docker pull ${{ needs.build.outputs.image }}
         
-        # Extract the application files
+        # Extract the monorepo application files properly
         mkdir -p extracted
         docker run --rm -v $(pwd)/extracted:/output ${{ needs.build.outputs.image }} sh -c "
+          # Copy the entire .next directory structure
           cp -r /app/.next /output/ &&
-          cp -r /app/public /output/ &&
+          # Copy public assets from web app
+          cp -r /app/apps/web/public /output/ &&
+          # Copy package.json files
           cp /app/package.json /output/ &&
-          cp /app/server.js /output/
+          cp /app/apps/web/package.json /output/web-package.json
         "
+        
+        # Create a production server script that handles monorepo structure
+        cat > extracted/server.js << 'EOF'
+        #!/usr/bin/env node
+        const { createServer } = require('http');
+        const path = require('path');
+        const fs = require('fs');
+
+        const hostname = process.env.HOSTNAME || 'localhost';
+        const port = parseInt(process.env.PORT || '3000', 10);
+
+        console.log('🚀 Starting Next.js production server...');
+        console.log(`📍 Server will run on http://${hostname}:${port}`);
+
+        // For monorepo structure, the standalone server is in apps/web
+        const standaloneServer = path.join(__dirname, '.next/standalone/apps/web/server.js');
+
+        if (fs.existsSync(standaloneServer)) {
+          console.log('🎯 Using Next.js standalone server for monorepo...');
+          
+          // Set environment variables for standalone server
+          process.env.HOSTNAME = hostname;
+          process.env.PORT = port.toString();
+          
+          // Change to the correct directory for the standalone server
+          process.chdir(path.join(__dirname, '.next/standalone/apps/web'));
+          
+          require('./server.js');
+        } else {
+          console.error('❌ Standalone server not found at:', standaloneServer);
+          process.exit(1);
+        }
+        EOF
         
         # Create deployment bundle
         cd extracted
@@ -129,44 +165,65 @@ jobs:
         ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
           set -euo pipefail
           
+          echo '🚀 Starting deployment...'
+          
           # Create deployment directory
           mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
           cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
           
           # Backup current deployment
           if [ -d '.next' ]; then
+            echo '📦 Backing up current deployment...'
             mv .next .next.backup.\$(date +%s) || true
+            mv public public.backup.\$(date +%s) || true
           fi
           
+          # Stop existing Node.js processes
+          echo '🔄 Stopping existing processes...'
+          pkill -f 'node.*server.js' || true
+          pkill -f 'node.*app.js' || true
+          sleep 2
+          
           # Extract new deployment
+          echo '📂 Extracting new deployment...'
           tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
           rm /tmp/deployment-${{ github.sha }}.tar.gz
           
-          # Stop existing Node.js processes
-          pkill -f 'node.*server.js' || pkill -f 'node.*app.js' || true
-          sleep 2
+          # Verify the monorepo structure
+          if [ -f '.next/standalone/apps/web/server.js' ]; then
+            echo '✅ Monorepo standalone server found'
+          else
+            echo '❌ Monorepo standalone server not found, listing structure:'
+            find .next -name 'server.js' -type f || true
+            exit 1
+          fi
           
-          # Start the application
+          # Set production environment
           export NODE_ENV=production
           export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
           export NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net
           export PORT=3000
+          export HOSTNAME=localhost
           
+          # Start the application
+          echo '🎯 Starting application...'
           nohup /usr/bin/node server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
           
           # Wait for startup
-          sleep 3
+          sleep 5
           
           # Check if process is running
           if kill -0 \$(cat /tmp/portfolio.pid) 2>/dev/null; then
-            echo 'Application started successfully with PID:' \$(cat /tmp/portfolio.pid)
+            echo '✅ Application started successfully with PID:' \$(cat /tmp/portfolio.pid)
+            echo '📋 Last few log lines:'
+            tail -10 /tmp/portfolio.log
           else
-            echo 'Application failed to start, showing logs:'
-            tail -20 /tmp/portfolio.log
+            echo '❌ Application failed to start, showing full logs:'
+            cat /tmp/portfolio.log
             exit 1
           fi
           
-          echo 'Deployment completed successfully!'
+          echo '🎉 Deployment completed successfully!'
         "
         
     - name: Verify Deployment

@@ -1,0 +1,15 @@
+{
+  "app_type": "node",
+  "startup_file": "server.js",
+  "environment": {
+    "NODE_ENV": "production",
+    "NEXT_PUBLIC_API_BASE_URL": "https://apiportfolio.mysticdatanode.net/api",
+    "NEXT_PUBLIC_SITE_URL": "https://apiportfolio.mysticdatanode.net",
+    "PORT": "3000",
+    "HOSTNAME": "localhost"
+  },
+  "max_pool_size": 2,
+  "min_instances": 1,
+  "restart_timeout": 60,
+  "log_level": 3
+}
