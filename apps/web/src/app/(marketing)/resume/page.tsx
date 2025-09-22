@@ -2,7 +2,7 @@ import { getProfile } from '@/lib/content'
 import { generateSiteMetadata } from '@/lib/seo'
 import { Badge, Button } from '@portfolio/ui'
 import { Eye, FileText, Calendar, MapPin, Mail } from 'lucide-react'
-import { PDFViewer } from '@/components/PDFViewer'
+import { PDFViewer } from '../../../components/PDFViewer'
 
 export const metadata = generateSiteMetadata(
   'Resume',
