@@ -52,9 +52,9 @@ Present information in a professional, recruiter-friendly manner. Highlight rele
 
 // Fallback responses when OpenAI is not available
 const FALLBACK_RESPONSES: Record<ChatMode, (context: string, query: string) => string> = {
-  general: (context, query) => {
-    if (context.trim()) {
-      return `Based on Suryadi's profile, here's what I can tell you:\n\n${context}\n\nWould you like to know more about any specific aspect of his background or projects?`
+  general: (_context, _query) => {
+    if (_context.trim()) {
+      return `Based on Suryadi's profile, here's what I can tell you:\n\n${_context}\n\nWould you like to know more about any specific aspect of his background or projects?`
     }
     return `I'm here to help you learn about Suryadi Zhang's background and experience. You can ask me about his projects, technical skills, work experience, or anything else you'd like to know!`
   },

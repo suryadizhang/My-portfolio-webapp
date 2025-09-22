@@ -1,4 +1,4 @@
-import { getAllProjects, getProjectBySlug, type ProjectFrontmatter } from '@/lib/content'
+import { getProjectBySlug } from '@/lib/content'
 import { generateSiteMetadata, generateProjectJsonLd } from '@/lib/seo'
 import { ProjectImage } from '@/components/project-image'
 import { Badge, Button } from '@portfolio/ui'

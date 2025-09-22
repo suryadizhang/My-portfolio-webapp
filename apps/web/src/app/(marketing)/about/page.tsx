@@ -1,7 +1,7 @@
-import { getProfile, type Profile } from '@/lib/content'
+import { getProfile } from '@/lib/content'
 import { generateSiteMetadata, generatePersonJsonLd } from '@/lib/seo'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfolio/ui'
-import { Calendar, MapPin, BookOpen, Award, Code2, Briefcase, GraduationCap, Trophy, ExternalLink, Mail, Phone, Github, Linkedin, CheckCircle, Star, Building2 } from 'lucide-react'
+import { Calendar, MapPin, BookOpen, Award, Code2, Briefcase, GraduationCap, Trophy, Mail, Github, Linkedin, CheckCircle, Star, Building2 } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata = generateSiteMetadata(

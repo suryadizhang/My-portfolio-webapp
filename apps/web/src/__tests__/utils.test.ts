@@ -1,6 +1,7 @@
 /**
  * Utility functions tests
  */
+/* eslint-env jest */
 
 describe('Math utilities', () => {
   test('adds numbers correctly', () => {
