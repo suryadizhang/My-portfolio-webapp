@@ -3,7 +3,7 @@
 import { useState, useRef, KeyboardEvent } from 'react'
 import { Button } from '@portfolio/ui'
 import { Send, Loader2, Mic, MicOff } from 'lucide-react'
-import { cn } from '@portfolio/ui/lib/utils'
+import { cn } from '@/lib/utils'
 
 // Speech Recognition types
 interface SpeechRecognitionEvent {
@@ -29,7 +29,9 @@ interface SpeechRecognition extends EventTarget {
   interimResults: boolean
   lang: string
   onstart: (() => void) | null
+  // eslint-disable-next-line no-unused-vars
   onresult: ((event: SpeechRecognitionEvent) => void) | null
+  // eslint-disable-next-line no-unused-vars
   onerror: ((event: SpeechRecognitionErrorEvent) => void) | null
   onend: (() => void) | null
   start(): void
@@ -37,7 +39,8 @@ interface SpeechRecognition extends EventTarget {
 }
 
 interface ChatInputProps {
-  onSend: (message: string) => Promise<void>
+  // eslint-disable-next-line no-unused-vars
+  onSend: (content: string) => Promise<void>
   disabled?: boolean
   placeholder?: string
   className?: string
@@ -190,6 +193,7 @@ export function ChatInput({ onSend, disabled = false, placeholder = 'Ask me anyt
 
 // Add speech recognition types
 declare global {
+  // eslint-disable-next-line no-unused-vars
   interface Window {
     SpeechRecognition: new () => SpeechRecognition
     webkitSpeechRecognition: new () => SpeechRecognition

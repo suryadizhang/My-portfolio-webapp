@@ -7,7 +7,8 @@ import { MessageList } from './message-list'
 import { ChatInput } from './chat-input'
 import { Button } from '@portfolio/ui'
 import { MessageCircle, X, Trash2, Download } from 'lucide-react'
-import { cn } from '@portfolio/ui/lib/utils'
+import { cn } from '@/lib/utils'
+import { generateId } from '@/lib/utils'
 
 interface ChatDockProps {
   className?: string
@@ -35,7 +36,7 @@ export function ChatDock({ className }: ChatDockProps) {
   const addMessage = useCallback((message: Omit<ChatMessage, 'id' | 'timestamp'>) => {
     const newMessage: ChatMessage = {
       ...message,
-      id: crypto.randomUUID(),
+      id: generateId(),
       timestamp: new Date()
     }
     
@@ -89,7 +90,7 @@ export function ChatDock({ className }: ChatDockProps) {
       const decoder = new TextDecoder()
 
       // Create placeholder message for streaming
-      const messageId = crypto.randomUUID()
+      const messageId = generateId()
       addMessage({
         role: 'assistant',
         content: '',
@@ -98,9 +99,13 @@ export function ChatDock({ className }: ChatDockProps) {
       })
 
       // Read stream
-      while (true) {
+      let streaming = true
+      while (streaming) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          streaming = false
+          break
+        }
 
         const chunk = decoder.decode(value)
         const lines = chunk.split('\n')

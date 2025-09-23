@@ -44,7 +44,7 @@ interface SearchResponse {
  */
 export function loadRAGIndex(): RAGIndex | null {
   try {
-    const indexPath = path.join(process.cwd(), 'apps', 'web', 'public', 'rag.json')
+    const indexPath = path.join(process.cwd(), 'public', 'rag.json')
     
     if (!fs.existsSync(indexPath)) {
       console.warn('RAG index not found. Run build-index to create it.')

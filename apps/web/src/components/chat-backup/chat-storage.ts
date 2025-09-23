@@ -1,4 +1,5 @@
 import { ChatMessage, ChatMode } from './types'
+import { getLocalStorage, setLocalStorage, isBrowser } from '@/lib/utils'
 
 const STORAGE_KEY_PREFIX = 'portfolio_chat_'
 const MAX_MESSAGES_PER_MODE = 50
@@ -9,6 +10,8 @@ export class ChatStorage {
   }
 
   static saveMessages(mode: ChatMode, messages: ChatMessage[]): void {
+    if (!isBrowser()) return
+    
     try {
       // Keep only the last N messages to prevent localStorage bloat
       const messagesToSave = messages.slice(-MAX_MESSAGES_PER_MODE)
@@ -17,22 +20,20 @@ export class ChatStorage {
         timestamp: msg.timestamp.toISOString()
       }))
       
-      localStorage.setItem(
-        this.getStorageKey(mode),
-        JSON.stringify(serialized)
-      )
+      setLocalStorage(this.getStorageKey(mode), serialized)
     } catch (error) {
       console.warn('Failed to save chat messages:', error)
     }
   }
 
   static loadMessages(mode: ChatMode): ChatMessage[] {
+    if (!isBrowser()) return []
+    
     try {
-      const stored = localStorage.getItem(this.getStorageKey(mode))
-      if (!stored) return []
+      const stored = getLocalStorage(this.getStorageKey(mode), [])
+      if (!stored || !Array.isArray(stored)) return []
 
-      const parsed = JSON.parse(stored)
-      return parsed.map((msg: any) => ({
+      return stored.map((msg: any) => ({
         ...msg,
         timestamp: new Date(msg.timestamp)
       }))
@@ -43,6 +44,8 @@ export class ChatStorage {
   }
 
   static clearMessages(mode: ChatMode): void {
+    if (!isBrowser()) return
+    
     try {
       localStorage.removeItem(this.getStorageKey(mode))
     } catch (error) {

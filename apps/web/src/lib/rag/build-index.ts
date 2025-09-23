@@ -245,10 +245,11 @@ async function processProjects(contentDir: string): Promise<ContentChunk[]> {
  * Build complete RAG index
  */
 export async function buildRAGIndex(): Promise<RAGIndex> {
-  const contentDir = path.join(process.cwd(), 'apps', 'web', 'content')
+  const contentDir = path.join(process.cwd(), 'content')
   const profilePath = path.join(contentDir, 'profile.json')
   
   console.log('Building RAG index...')
+  console.log('Content dir:', contentDir)
   
   // Process all content sources
   const [profileChunks, projectChunks] = await Promise.all([
@@ -281,7 +282,7 @@ export async function buildRAGIndex(): Promise<RAGIndex> {
  * Save index to file
  */
 export async function saveRAGIndex(index: RAGIndex, outputPath?: string): Promise<void> {
-  const defaultPath = path.join(process.cwd(), 'apps', 'web', 'public', 'rag.json')
+  const defaultPath = path.join(process.cwd(), 'public', 'rag.json')
   const filePath = outputPath || defaultPath
   
   // Ensure directory exists

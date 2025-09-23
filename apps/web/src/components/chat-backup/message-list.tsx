@@ -4,7 +4,7 @@ import { useEffect, useRef } from 'react'
 import { ChatMessage } from './types'
 import { Badge } from '@portfolio/ui'
 import { Bot, User, ExternalLink, Copy, ThumbsUp, ThumbsDown } from 'lucide-react'
-import { cn } from '@portfolio/ui/lib/utils'
+import { cn } from '@/lib/utils'
 
 interface MessageListProps {
   messages: ChatMessage[]
