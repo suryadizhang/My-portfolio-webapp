@@ -1,46 +1,170 @@
-# Local env vars
-.env*.local
+# Environment Variables - NEVER COMMIT THESE
 .env
+.env*.local
+.env.development
+.env.production
+.env.staging
+.env.test
+*.env
+**/.env
+**/.env.local
+**/.env.development
+**/.env.production
+
+# Backup and temporary files that might contain sensitive data
+*.backup
+*.bak
+*.tmp
+*.temp
+*~
+.#*
+#*#
+
+# Database dumps and sensitive data files
+*.sql
+*.sqlite
+*.db
+dump.rdb
+*.dump
+
+# SSH keys and certificates
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+id_rsa*
+id_dsa*
+id_ecdsa*
+
+# Secrets and configuration
+secrets/
+config/secrets/
+*.secret
+secrets.json
+credentials.json
 
 # Dependencies
 node_modules/
+bower_components/
 
-# Production
+# Production builds
 /build
 /.next/
 /dist/
 /out/
+**/.next/
+**/dist/
+**/build/
 
-# Debug
+# Debug logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
 
-# IDE
-.vscode/
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+lib-cov
+
+# Coverage directory used by tools like istanbul
+/coverage
+*.lcov
+.nyc_output
+
+# IDE and Editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
 *.swp
 *.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
 
-# OS
+# OS generated files
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
-
-# Testing
-/coverage
+desktop.ini
+$RECYCLE.BIN/
 
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
 
-# Python virtual environment
+# Python
 .venv/
+venv/
+env/
+ENV/
+env.bak/
+venv.bak/
 __pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Docker
+.dockerignore
+Dockerfile.local
 
 # Build outputs
 packages/*/dist/
 apps/*/dist/
 apps/*/.next/
+apps/*/build/
 
 # Turbo
 .turbo/
 .vercel
+
+# Cache directories
+.cache/
+.parcel-cache/
+.npm
+.eslintcache
+.stylelintcache
+
+# Optional npm cache directory
+.npm
+
+# Optional eslint cache
+.eslintcache
+
+# Microbundle cache
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# Optional REPL history
+.node_repl_history
+
+# Local development files
+*.local
+local/
+.local/
+
+# Archive files that might contain sensitive data
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Analytics and monitoring
+.sentryclirc
