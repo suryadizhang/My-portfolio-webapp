@@ -24,9 +24,9 @@ export default function AboutPage() {
         {/* Hero Section - Professional Introduction */}
         <section className="mb-20">
           <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              Available for immediate hire
+            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <Code2 className="w-4 h-4" />
+              Full-Stack Software Engineer
             </div>
             
             <h1 className="text-5xl font-bold mb-6">About {profile.name}</h1>
@@ -43,7 +43,7 @@ export default function AboutPage() {
               </div>
               <div className="flex items-center justify-center gap-2 text-gray-600">
                 <Calendar className="h-5 w-5 text-blue-600" />
-                <span>Open to opportunities</span>
+                <span>Software Engineer</span>
               </div>
             </div>
 

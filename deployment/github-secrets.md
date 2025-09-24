@@ -18,6 +18,18 @@ DOMAIN_NAME=apiportfolio.mysticdatanode.net
 SITE_URL=https://apiportfolio.mysticdatanode.net
 ```
 
+### **Email Configuration (Gmail SMTP)**
+```
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=suryadizhang.swe@gmail.com
+SMTP_PASS=your_gmail_app_specific_password_16_chars
+FROM_EMAIL="Suryadi Zhang <suryadizhang.swe@gmail.com>"
+TO_EMAIL=suryadizhang.swe@gmail.com
+IP_SALT=production_random_salt_string_for_security
+```
+
 ### **Application Configuration**
 ```
 NODE_ENV=production
@@ -27,8 +39,7 @@ PORT=3000
 ### **Optional API Keys (for full functionality)**
 ```
 OPENAI_API_KEY=sk-your-openai-key
-RESEND_API_KEY=re_your-resend-key
-CONTACT_EMAIL=suryadizhang86@gmail.com
+RESEND_API_KEY=re_your-resend-key  # Alternative to Gmail SMTP (not needed if using Gmail)
 ```
 
 ### **Security Secrets**

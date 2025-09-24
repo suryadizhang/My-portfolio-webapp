@@ -126,10 +126,10 @@ export function FocusTrap({
 
     const focusableElements = trapElement.querySelectorAll(
       'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    ) as NodeListOf<HTMLElement>;
+    );
 
-    const firstElement = focusableElements[0];
-    const lastElement = focusableElements[focusableElements.length - 1];
+    const firstElement = focusableElements[0] as HTMLElement;
+    const lastElement = focusableElements[focusableElements.length - 1] as HTMLElement;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Tab') {

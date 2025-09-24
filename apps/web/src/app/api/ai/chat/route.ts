@@ -51,22 +51,26 @@ Present information in a professional, recruiter-friendly manner. Highlight rele
 }
 
 // Fallback responses when OpenAI is not available
-const FALLBACK_RESPONSES: Record<ChatMode, (context: string, query: string) => string> = {
-  general: (_context, _query) => {
-    if (_context.trim()) {
-      return `Based on Suryadi's profile, here's what I can tell you:\n\n${_context}\n\nWould you like to know more about any specific aspect of his background or projects?`
+// eslint-disable-next-line no-unused-vars
+const FALLBACK_RESPONSES: Record<ChatMode, (context: string, _query: string) => string> = {
+  // eslint-disable-next-line no-unused-vars
+  general: (context, _query) => {
+    if (context.trim()) {
+      return `Based on Suryadi's profile, here's what I can tell you:\n\n${context}\n\nWould you like to know more about any specific aspect of his background or projects?`
     }
     return `I'm here to help you learn about Suryadi Zhang's background and experience. You can ask me about his projects, technical skills, work experience, or anything else you'd like to know!`
   },
   
-  projects: (context, query) => {
+  // eslint-disable-next-line no-unused-vars
+  projects: (context, _query) => {
     if (context.trim()) {
       return `Here are the technical details I found:\n\n${context}\n\nWould you like me to elaborate on any specific technical aspects or show you other related projects?`
     }
     return `I can help you explore Suryadi's technical projects. Ask me about specific technologies, project architecture, implementation details, or any development-related questions!`
   },
   
-  resume: (context, query) => {
+  // eslint-disable-next-line no-unused-vars
+  resume: (context, _query) => {
     if (context.trim()) {
       return `Here's the professional information that matches your inquiry:\n\n${context}\n\nIs there any other aspect of Suryadi's professional background you'd like to know about?`
     }
@@ -244,6 +248,7 @@ export async function POST(request: NextRequest) {
         const reader = openaiStream.getReader()
         let fullResponse = ''
         
+        // eslint-disable-next-line no-constant-condition
         while (true) {
           const { done, value } = await reader.read()
           if (done) break

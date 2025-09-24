@@ -17,6 +17,7 @@ export interface ChatSource {
   excerpt: string
 }
 
+/* eslint-disable no-unused-vars */
 export interface ChatContext {
   messages: ChatMessage[]
   mode: ChatMode

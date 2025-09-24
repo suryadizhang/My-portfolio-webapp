@@ -4,12 +4,14 @@ import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfo
 import { Calendar, MapPin, BookOpen, Award, Code2, Briefcase, GraduationCap, Trophy, Mail, Github, Linkedin, CheckCircle, Star, Building2 } from 'lucide-react'
 import Link from 'next/link'
 
-export const metadata = generateSiteMetadata()
+export const metadata = generateSiteMetadata(
+  'About',
+  'Learn about Suryadi Zhang - Full-Stack Software Engineer with real-world experience building production applications with React, Next.js, Python, and FastAPI.'
+)
 
-export default function HomePage() {
+export default function AboutPage() {
   const profile = getProfile()
 
-  // This portfolio runs on an optimized monorepo with selective CI/CD deployment
   return (
     <>
       <script
@@ -22,19 +24,12 @@ export default function HomePage() {
         {/* Hero Section - Professional Introduction */}
         <section className="mb-20">
           <div className="max-w-4xl mx-auto text-center">
-            {/* Professional Photo */}
-            <div className="mb-8">
-              <div className="w-32 h-32 mx-auto mb-6 rounded-full overflow-hidden border-4 border-blue-100 shadow-lg">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img 
-                  src="/images/profile/profile-photo.jpg" 
-                  alt={`${profile.name} - Professional headshot`}
-                  className="w-full h-full object-cover"
-                />
-              </div>
+            <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+              <Code2 className="w-4 h-4" />
+              Full-Stack Software Engineer
             </div>
             
-            <h1 className="text-5xl font-bold mb-6">{profile.name}</h1>
+            <h1 className="text-5xl font-bold mb-6">About {profile.name}</h1>
             <h2 className="text-2xl font-semibold text-gray-700 mb-8">{profile.headline}</h2>
             
             <div className="grid md:grid-cols-3 gap-6 mb-12">
@@ -48,7 +43,7 @@ export default function HomePage() {
               </div>
               <div className="flex items-center justify-center gap-2 text-gray-600">
                 <Calendar className="h-5 w-5 text-blue-600" />
-                <span>Open to opportunities</span>
+                <span>Software Engineer</span>
               </div>
             </div>
 
@@ -299,7 +294,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* Personal Section - Interests & Hobbies */}
+        {/* Personal Section */}
         <section className="mb-20">
           <div className="max-w-4xl mx-auto">
             <div className="text-center mb-12">
@@ -349,9 +344,8 @@ export default function HomePage() {
                 <div className="mt-8 p-6 bg-blue-50 rounded-xl">
                   <h4 className="font-semibold text-blue-900 mb-2">Fun Fact</h4>
                   <p className="text-blue-800">
-                    When I'm not coding, you'll find me exploring new manga series, experimenting with different recipes,
-                    or diving into immersive video games. There's something satisfying about both perfecting a dish 
-                    and optimizing an algorithm!
+                    I'm experimenting with hibachi recipes and love the precision required—just like writing clean, 
+                    efficient code! There's something satisfying about both perfecting a dish and optimizing an algorithm.
                   </p>
                 </div>
               </div>

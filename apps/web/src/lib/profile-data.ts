@@ -41,7 +41,7 @@ export const profileData: Profile = {
   headline: "Software Engineer (Full-Stack) | React & Python | Next.js, FastAPI, Postgres | Shipped live booking + admin | CI/CD",
   location: "Fremont, California, United States",
   contact: {
-    email: "suryadizhang86@gmail.com",
+    email: "suryadizhang.swe@gmail.com",
     website: "https://myportfolio.mysticdatanode.net",
     github: "https://github.com/suryadizhang",
     linkedin: "https://www.linkedin.com/in/suryadi-zhang/"

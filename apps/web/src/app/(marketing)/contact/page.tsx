@@ -162,8 +162,8 @@ export default function ContactPage() {
           <div>
             <h2 className="text-2xl font-semibold mb-6">Let's Connect</h2>
             <p className="text-muted-foreground mb-8">
-              Whether you're looking to hire a developer, collaborate on a project, 
-              or just want to say hello, I'd love to hear from you.
+              Whether you're looking to collaborate on a project, discuss technology, 
+              or just want to connect, I'd love to hear from you.
             </p>
           </div>
 
@@ -228,7 +228,7 @@ export default function ContactPage() {
           <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
             <h3 className="font-semibold mb-2">Current Status</h3>
             <p className="text-sm text-muted-foreground">
-              🟢 Available for new projects and opportunities
+              🟢 Open to professional conversations and collaboration
             </p>
             <p className="text-sm text-muted-foreground mt-2">
               I typically respond to messages within 24 hours.

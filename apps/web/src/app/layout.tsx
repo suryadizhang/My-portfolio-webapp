@@ -3,7 +3,6 @@ import { Inter } from 'next/font/google'
 import React from 'react'
 import './globals.css'
 import Footer from '../components/footer'
-import ChatWidgetWrapper from '../components/chat/ChatWidgetClientWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -92,7 +91,7 @@ export default function RootLayout({
         <div className="min-h-screen flex flex-col">
           {children}
           <Footer />
-          <ChatWidgetWrapper />
+          {/* ChatWidget removed - replaced with server-side API for stability */}
         </div>
       </body>
     </html>

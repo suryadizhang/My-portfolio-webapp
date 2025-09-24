@@ -596,7 +596,7 @@ If you encounter issues during deployment:
 
 ---
 
-**Need help with deployment?** Contact me at [suryadizhang86@gmail.com](mailto:suryadizhang86@gmail.com) or use the AI chat assistant on the live site.
+**Need help with deployment?** Contact me at [suryadizhang.swe@gmail.com](mailto:suryadizhang.swe@gmail.com) or use the AI chat assistant on the live site.
 
 ---
 

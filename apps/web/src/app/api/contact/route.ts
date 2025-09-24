@@ -141,7 +141,7 @@ async function sendEmailWithResend(resend: any, contactData: any): Promise<{ suc
 
     await resend.emails.send({
       from: process.env.FROM_EMAIL || 'portfolio@myportfolio.mysticdatanode.net',
-      to: process.env.TO_EMAIL || 'suryadizhang86@gmail.com',
+      to: process.env.TO_EMAIL || 'suryadizhang.swe@gmail.com',
       subject: `Portfolio Contact: ${contactData.subject} (from ${contactData.name})`,
       html: emailContent,
       reply_to: contactData.email,
@@ -183,7 +183,7 @@ Sent from portfolio website at ${new Date().toLocaleString()}
 
     await transporter.sendMail({
       from: process.env.FROM_EMAIL || '"Portfolio Contact" <noreply@example.com>',
-      to: process.env.TO_EMAIL || 'suryadizhang86@gmail.com',
+      to: process.env.TO_EMAIL || 'suryadizhang.swe@gmail.com',
       subject: `Portfolio Contact: ${contactData.subject} (from ${contactData.name})`,
       text: textContent,
       replyTo: contactData.email,
@@ -288,7 +288,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         { 
           error: 'Failed to send message. Please try again or contact me directly.',
-          fallback: 'suryadizhang86@gmail.com'
+          fallback: 'suryadizhang.swe@gmail.com'
         },
         { status: 500 }
       )

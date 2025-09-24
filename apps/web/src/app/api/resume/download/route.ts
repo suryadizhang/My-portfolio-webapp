@@ -94,7 +94,7 @@ async function downloadPDF() {
       { 
         error: 'PDF not available',
         message: 'Resume PDF is not currently available for direct download. Please contact me via email for the latest version.',
-        contactEmail: 'suryadizhang86@gmail.com',
+        contactEmail: 'suryadizhang.swe@gmail.com',
         alternatives: {
           json: '/api/resume/download?format=json',
           contact: '/contact'

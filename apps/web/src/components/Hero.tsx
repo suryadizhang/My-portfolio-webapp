@@ -2,7 +2,7 @@ export default function Hero() {
   return (
     <section className="mx-auto max-w-5xl px-6 pt-20 pb-10">
       <p className="text-sm font-medium tracking-wide text-slate-500">
-        (He/Him) • Available for hire
+        (He/Him) • Software Engineer
       </p>
       <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
         Suryadi Zhang

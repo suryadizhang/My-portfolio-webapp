@@ -348,6 +348,25 @@ jobs:
               -e NODE_ENV=production \
               -e NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
               -e NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net \
+              -e OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
+              -e WEBHOOK_SECRET='${{ secrets.WEBHOOK_SECRET }}' \
+              -e OPENAI_MODEL='${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}' \
+              -e CHAT_MAX_TOKENS='${{ vars.CHAT_MAX_TOKENS || '300' }}' \
+              -e CHAT_TEMPERATURE='${{ vars.CHAT_TEMPERATURE || '0.4' }}' \
+              -e CHAT_WEBHOOK_ORIGIN='${{ vars.CHAT_WEBHOOK_ORIGIN || '*' }}' \
+              -e CHAT_MAX_HISTORY='${{ vars.CHAT_MAX_HISTORY || '8' }}' \
+              -e CHAT_MAX_INPUT_CHARS='${{ vars.CHAT_MAX_INPUT_CHARS || '800' }}' \
+              -e CHAT_WINDOW_MS='${{ vars.CHAT_WINDOW_MS || '60000' }}' \
+              -e CHAT_MAX_REQS='${{ vars.CHAT_MAX_REQS || '8' }}' \
+              -e NEXT_PUBLIC_CHAT_ENABLED='${{ vars.NEXT_PUBLIC_CHAT_ENABLED || 'false' }}' \
+              -e SMTP_HOST='${{ secrets.SMTP_HOST }}' \
+              -e SMTP_PORT='${{ secrets.SMTP_PORT }}' \
+              -e SMTP_SECURE='${{ secrets.SMTP_SECURE }}' \
+              -e SMTP_USER='${{ secrets.SMTP_USER }}' \
+              -e SMTP_PASS='${{ secrets.SMTP_PASS }}' \
+              -e FROM_EMAIL='${{ secrets.FROM_EMAIL }}' \
+              -e TO_EMAIL='${{ secrets.TO_EMAIL }}' \
+              -e IP_SALT='${{ secrets.IP_SALT }}' \
               \$NEW_IMAGE
             
             # Health check

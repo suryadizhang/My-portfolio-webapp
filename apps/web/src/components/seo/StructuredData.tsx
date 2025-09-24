@@ -51,7 +51,7 @@ function generatePersonData(data: any) {
     "description": data.description || "Full-Stack Software Engineer with expertise in modern web technologies, API development, and cloud infrastructure.",
     "url": baseUrl,
     "image": `${baseUrl}/images/profile-photo.jpg`,
-    "email": "mailto:suryadizhang86@gmail.com",
+    "email": "mailto:suryadizhang.swe@gmail.com",
     "knowsAbout": data.skills || [
       "JavaScript",
       "TypeScript", 

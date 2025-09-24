@@ -10,7 +10,7 @@ export default function Footer() {
               Full-Stack Software Engineer building responsive apps and robust APIs with CI/CD.
             </p>
             <p className="mt-2 text-sm text-slate-500">
-              Fremont, CA • Available for hire
+              Fremont, CA • Software Engineer
             </p>
           </div>
           
@@ -20,7 +20,7 @@ export default function Footer() {
               <h4 className="text-sm font-medium text-slate-900">Connect</h4>
               <div className="mt-3 space-y-2">
                 <a 
-                  href="mailto:suryadizhang86@gmail.com" 
+                  href="mailto:suryadizhang.swe@gmail.com" 
                   className="block text-sm text-slate-600 hover:text-slate-900"
                 >
                   Email
