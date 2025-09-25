@@ -3,6 +3,8 @@ import { Inter } from 'next/font/google'
 import React from 'react'
 import './globals.css'
 import Footer from '../components/footer'
+import Navbar from '../components/nav/Navbar'
+import ChatWidgetWrapper from '../components/chat/ChatWidgetWrapper'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -88,10 +90,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased bg-white text-slate-900`}>
+        <Navbar />
         <div className="min-h-screen flex flex-col">
           {children}
           <Footer />
-          {/* ChatWidget removed - replaced with server-side API for stability */}
+          <ChatWidgetWrapper />
         </div>
       </body>
     </html>

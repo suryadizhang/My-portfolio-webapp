@@ -3,6 +3,7 @@ import { generateSiteMetadata, generatePersonJsonLd } from '@/lib/seo'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfolio/ui'
 import { Calendar, MapPin, BookOpen, Award, Code2, Briefcase, GraduationCap, Trophy, Mail, Github, Linkedin, CheckCircle, Star, Building2 } from 'lucide-react'
 import Link from 'next/link'
+import SkillBadges from '@/components/SkillBadges'
 
 export const metadata = generateSiteMetadata(
   'About',
@@ -214,16 +215,24 @@ export default function AboutPage() {
               </Card>
             </div>
 
-            {/* All Skills */}
-            <div className="mt-12 text-center">
-              <h3 className="text-2xl font-semibold mb-6">Complete Tech Stack</h3>
-              <div className="flex flex-wrap justify-center gap-3">
-                {profile.skills.map((skill) => (
-                  <Badge key={skill} variant="secondary" className="bg-gray-100 text-gray-800 hover:bg-gray-200 px-4 py-2">
-                    {skill}
-                  </Badge>
-                ))}
-              </div>
+            {/* LinkedIn-Style Skills */}
+            <div className="mt-12">
+              <h3 className="text-2xl font-semibold mb-6 text-center">
+                Professional Skills & Technologies
+              </h3>
+              <p className="text-center text-gray-600 mb-8">
+                Core competencies mirroring my LinkedIn profile with proficiency indicators
+              </p>
+              <SkillBadges variant="detailed" showProficiency={true} />
+            </div>
+
+            {/* Compact Skills Overview */}
+            <div className="mt-12 text-center bg-gray-50 rounded-xl p-8">
+              <h4 className="text-lg font-semibold mb-4 text-gray-900">Quick Skills Overview</h4>
+              <SkillBadges variant="compact" limit={12} />
+              <p className="text-sm text-gray-600 mt-4">
+                ● Expert &nbsp;&nbsp; ● Advanced &nbsp;&nbsp; ○ Intermediate
+              </p>
             </div>
           </div>
         </section>

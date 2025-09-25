@@ -34,6 +34,20 @@ const config: Config & { safelist?: any[] } = {
   theme: {
     extend: {
       colors: {
+        // LinkedIn brand colors
+        brand: {
+          DEFAULT: '#0A66C2',
+          50: '#E6F1FB',
+          100: '#D1E6F9',
+          200: '#A3CDF3',
+          300: '#74B4ED',
+          400: '#469BE7',
+          500: '#1882E1',
+          600: '#0A66C2',
+          700: '#08539B',
+          800: '#064074',
+          900: '#042D4D',
+        },
         border: 'hsl(var(--border))',
         input: 'hsl(var(--input))',
         ring: 'hsl(var(--ring))',

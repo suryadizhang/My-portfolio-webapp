@@ -20,6 +20,7 @@ const nextConfig = {
   
   experimental: {
     mdxRs: true,
+    externalDir: true, // Allow imports from parent directories
   },
   pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
   env: {

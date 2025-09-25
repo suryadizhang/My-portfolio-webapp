@@ -20,6 +20,13 @@
     ],
     "baseUrl": ".",
     "paths": {
+      "@/*": ["apps/web/src/*"],
+      "@portfolio/ui": ["packages/ui/src"],
+      "@portfolio/ui/*": ["packages/ui/src/*"],
+      "@portfolio/utils": ["packages/utils/src"],
+      "@portfolio/utils/*": ["packages/utils/src/*"],
+      "@portfolio/config": ["packages/config"],
+      "@portfolio/config/*": ["packages/config/*"],
       "@ui": ["./packages/ui/src"],
       "@ui/*": ["./packages/ui/src/*"],
       "@utils": ["./packages/utils/src"],
