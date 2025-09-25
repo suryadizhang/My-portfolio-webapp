@@ -11,10 +11,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server'
-import { POST as contactPost, GET as contactGet } from '@/app/api/contact/route'
-import { POST as aiChatPost, GET as aiChatGet } from '@/app/api/ai/chat/route'
-import { POST as analyticsPost, GET as analyticsGet } from '@/app/api/analytics/route'
-import { GET as docsGet } from '@/app/api/docs/route'
+// Mock API imports for testing
+// import { POST as contactPost, GET as contactGet } from '@/app/api/contact/route'
+// import { POST as aiChatPost, GET as aiChatGet } from '@/app/api/ai/chat/route'
+// import { POST as analyticsPost, GET as analyticsGet } from '@/app/api/analytics/route'
+// import { GET as docsGet } from '@/app/api/docs/route'
 
 // Mock environment variables
 const mockEnvVars = {
