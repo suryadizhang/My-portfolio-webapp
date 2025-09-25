@@ -1,0 +1,607 @@
+name: "Production Deployment"
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      force_deploy:
+        description: 'Force deploy even if no changes detected'
+        required: false
+        default: false
+        type: boolean
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: suryadizhang/my-portfolio-webapp
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      frontend: ${{ steps.changes.outputs.frontend }}
+      backend: ${{ steps.changes.outputs.backend }}
+      shared: ${{ steps.changes.outputs.shared }}
+      docs: ${{ steps.changes.outputs.docs }}
+      any: ${{ steps.changes.outputs.any }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+      
+      - name: Detect changes
+        id: changes
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            frontend:
+              - 'apps/web/src/app/**'
+              - 'apps/web/src/components/**'
+              - 'apps/web/src/lib/**'
+              - 'apps/web/public/**'
+              - 'apps/web/package.json'
+              - 'apps/web/next.config.js'
+              - 'apps/web/tailwind.config.js'
+            backend:
+              - 'apps/web/src/app/api/**'
+              - 'Dockerfile'
+              - 'docker-compose.yml'
+              - 'nginx.conf'
+              - 'ecosystem.config.js'
+            shared:
+              - 'packages/**'
+              - 'package.json'
+              - 'package-lock.json'
+              - 'turbo.json'
+              - 'tsconfig.base.json'
+            docs:
+              - 'apps/web/src/app/api-docs/**'
+              - 'apps/web/src/components/swagger/**'
+              - 'apps/web/src/lib/swagger/**'
+              - 'TESTING_REPORT.md'
+            any:
+              - '**'
+
+  # Build and prepare application
+  build-application:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.any == 'true' || github.event.inputs.force_deploy == 'true' }}
+    timeout-minutes: 30
+    
+    permissions:
+      contents: read
+      packages: write
+    
+    outputs:
+      image: ${{ steps.docker-build.outputs.image }}
+      build-id: ${{ steps.build-info.outputs.build-id }}
+      
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Generate build information
+      id: build-info
+      run: |
+        BUILD_ID="${{ github.sha }}-$(date +%s)"
+        echo "build-id=$BUILD_ID" >> $GITHUB_OUTPUT
+        echo "Build ID: $BUILD_ID"
+        echo "Frontend changes: ${{ needs.detect-changes.outputs.frontend }}"
+        echo "Backend changes: ${{ needs.detect-changes.outputs.backend }}"
+        echo "Shared changes: ${{ needs.detect-changes.outputs.shared }}"
+        echo "Documentation changes: ${{ needs.detect-changes.outputs.docs }}"
+      
+    - name: Validate repository structure
+      run: |
+        echo "🔍 Validating critical files..."
+        
+        # Core configuration files
+        test -f "tsconfig.base.json" || (echo "❌ tsconfig.base.json missing" && exit 1)
+        test -f "apps/web/tsconfig.json" || (echo "❌ apps/web/tsconfig.json missing" && exit 1)
+        test -f "apps/web/next.config.js" || (echo "❌ apps/web/next.config.js missing" && exit 1)
+        test -f "apps/web/package.json" || (echo "❌ apps/web/package.json missing" && exit 1)
+        
+        # Workspace packages
+        test -d "packages/ui/src" || (echo "❌ packages/ui/src missing" && exit 1)
+        test -d "packages/utils/src" || (echo "❌ packages/utils/src missing" && exit 1)
+        test -d "packages/config" || (echo "❌ packages/config missing" && exit 1)
+        
+        # API documentation files (if docs changed)
+        if [[ "${{ needs.detect-changes.outputs.docs }}" == "true" ]]; then
+          test -f "apps/web/src/app/api-docs/page.tsx" || (echo "❌ API docs page missing" && exit 1)
+          test -f "apps/web/src/components/swagger/SwaggerUI.tsx" || (echo "❌ SwaggerUI component missing" && exit 1)
+          test -f "apps/web/src/lib/swagger/openapi.ts" || (echo "❌ OpenAPI spec missing" && exit 1)
+          test -f "TESTING_REPORT.md" || (echo "❌ Testing report missing" && exit 1)
+          echo "✅ API documentation files validated"
+        fi
+        
+        # Utils package exports
+        test -f "packages/utils/src/schemas/index.ts" || (echo "❌ utils schemas index missing" && exit 1)
+        test -f "packages/utils/src/kv/index.ts" || (echo "❌ utils kv index missing" && exit 1)
+        test -f "packages/utils/src/auth/index.ts" || (echo "❌ utils auth index missing" && exit 1)
+        
+        echo "✅ All critical files validated successfully"
+
+    - name: Setup Node.js environment
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: |
+        echo "📦 Installing workspace dependencies..."
+        npm ci --include-workspace-root --workspaces
+        
+        echo "🔍 Verifying workspace package resolution..."
+        node -e "
+          try {
+            require.resolve('@portfolio/ui');
+            require.resolve('@portfolio/utils');
+            require.resolve('@portfolio/config');
+            console.log('✅ All workspace packages resolved successfully');
+          } catch (e) {
+            console.error('❌ Package resolution failed:', e.message);
+            process.exit(1);
+          }
+        "
+
+    - name: Run quality checks
+      run: |
+        echo "🔎 Running TypeScript type checking..."
+        npm run typecheck
+        
+        echo "🧪 Running tests..."
+        npm run test
+        
+        echo "✅ All quality checks passed"
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Extract Docker metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=sha,prefix=prod-
+          type=raw,value=latest
+          
+    - name: Build and push Docker image
+      id: docker-build
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          NODE_ENV=production
+          NEXT_PUBLIC_API_BASE_URL=https://myportfolio.mysticdatanode.net/api
+          NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
+        
+    - name: Output build information
+      run: |
+        echo "🐳 Docker image built successfully:"
+        echo "Tags: ${{ steps.meta.outputs.tags }}"
+        echo "Image: ${{ fromJSON(steps.meta.outputs.json).tags[0] }}"
+        echo "Build ID: ${{ steps.build-info.outputs.build-id }}"
+        echo "image=${{ fromJSON(steps.meta.outputs.json).tags[0] }}" >> $GITHUB_OUTPUT
+
+  # Deploy to Vercel (Frontend)
+  deploy-frontend:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-application]
+    if: ${{ (needs.detect-changes.outputs.frontend == 'true' || needs.detect-changes.outputs.shared == 'true' || needs.detect-changes.outputs.docs == 'true' || github.event.inputs.force_deploy == 'true') && success() }}
+    timeout-minutes: 20
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js for Vercel
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        
+    - name: Install Vercel CLI
+      run: npm install -g vercel@latest
+      
+    - name: Pull Vercel environment information
+      run: vercel pull --yes --environment=production --token=${{ secrets.VERCEL_TOKEN }}
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      
+    - name: Install dependencies for Vercel build
+      run: npm ci --include-workspace-root --workspaces
+      
+    - name: Build project artifacts for Vercel
+      run: vercel build --prod --token=${{ secrets.VERCEL_TOKEN }}
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      
+    - name: Deploy to Vercel
+      id: vercel-deploy
+      run: |
+        URL=$(vercel deploy --prebuilt --prod --token=${{ secrets.VERCEL_TOKEN }})
+        echo "deployment-url=$URL" >> $GITHUB_OUTPUT
+        echo "✅ Frontend deployed to: $URL"
+      env:
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        
+    - name: Verify frontend deployment
+      run: |
+        echo "🔍 Verifying frontend deployment..."
+        FRONTEND_URL="${{ steps.vercel-deploy.outputs.deployment-url }}"
+        
+        # Wait for deployment to be ready
+        sleep 30
+        
+        # Basic health check
+        if curl -f -s -o /dev/null "$FRONTEND_URL"; then
+          echo "✅ Frontend is accessible at: $FRONTEND_URL"
+        else
+          echo "❌ Frontend health check failed"
+          exit 1
+        fi
+        
+        # Check API documentation endpoint (if docs changed)
+        if [[ "${{ needs.detect-changes.outputs.docs }}" == "true" ]]; then
+          if curl -f -s -o /dev/null "$FRONTEND_URL/api-docs"; then
+            echo "✅ API documentation is accessible"
+          else
+            echo "❌ API documentation health check failed"
+            exit 1
+          fi
+        fi
+
+  # Extract application bundle for VPS deployment
+  extract-backend:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-application]
+    if: ${{ (needs.detect-changes.outputs.backend == 'true' || needs.detect-changes.outputs.shared == 'true' || github.event.inputs.force_deploy == 'true') && success() }}
+    timeout-minutes: 15
+    
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+      
+    - name: Extract backend application from Docker image
+      run: |
+        echo "🔍 Extracting backend from image: ${{ needs.build-application.outputs.image }}"
+        docker pull ${{ needs.build-application.outputs.image }}
+
+        # Create container and extract application
+        CID=$(docker create ${{ needs.build-application.outputs.image }})
+        mkdir -p extracted
+
+        echo "📦 Extracting application bundle..."
+        if docker cp "$CID:/app" extracted/backend 2>/dev/null; then
+          echo "✅ Successfully extracted /app as backend"
+        else
+          echo "❌ Failed to extract application from Docker image"
+          docker rm -f "$CID"
+          exit 1
+        fi
+
+        docker rm -f "$CID"
+
+        echo "🔍 Verifying extracted backend application:"
+        find extracted -maxdepth 3 -type f | head -20
+        
+        # Verify critical backend files
+        if [ ! -f "extracted/backend/apps/web/server.js" ]; then
+          echo "❌ Backend server.js not found"
+          find extracted -name "server.js" -type f || echo "No server.js files found anywhere"
+          exit 1
+        fi
+        
+        # Check for API routes
+        if [ ! -d "extracted/backend/apps/web/.next" ]; then
+          echo "❌ Next.js .next directory not found"
+          exit 1
+        fi
+        
+        echo "✅ Backend application extraction completed"
+
+        # Create deployment bundle
+        cd extracted
+        tar -czf ../backend-deployment.tar.gz .
+        
+    - name: Upload backend deployment bundle
+      uses: actions/upload-artifact@v4
+      with:
+        name: backend-deployment-${{ needs.build-application.outputs.build-id }}
+        path: backend-deployment.tar.gz
+        retention-days: 3
+
+  # Deploy to VPS (Backend API)
+  deploy-backend:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-application, extract-backend]
+    if: ${{ success() }}
+    timeout-minutes: 30
+    
+    environment:
+      name: production-vps
+      url: http://108.175.12.154
+    
+    steps:
+    - name: Validate required secrets
+      run: |
+        MISSING=0
+        [ -n "${{ secrets.VPS_SSH_PRIVATE_KEY }}" ] || { echo "❌ Missing VPS_SSH_PRIVATE_KEY"; MISSING=1; }
+        [ -n "${{ secrets.VPS_HOST }}" ] || { echo "❌ Missing VPS_HOST"; MISSING=1; }
+        [ -n "${{ secrets.VPS_USER }}" ] || { echo "❌ Missing VPS_USER"; MISSING=1; }
+        
+        if [ $MISSING -eq 1 ]; then
+          echo "❌ Required secrets are missing. Please configure:"
+          echo "  - VPS_SSH_PRIVATE_KEY: SSH private key for VPS access"
+          echo "  - VPS_HOST: VPS hostname or IP address"
+          echo "  - VPS_USER: SSH username for VPS"
+          exit 1
+        fi
+        
+        echo "✅ All required secrets are configured"
+      
+    - name: Download backend deployment bundle
+      uses: actions/download-artifact@v4
+      with:
+        name: backend-deployment-${{ needs.build-application.outputs.build-id }}
+        
+    - name: Setup SSH configuration
+      run: |
+        mkdir -p ~/.ssh
+        echo "${{ secrets.VPS_SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+        chmod 600 ~/.ssh/id_rsa
+        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts || true
+        
+    - name: Upload deployment bundle to VPS
+      run: |
+        VPS_USER="${{ secrets.VPS_USER }}"
+        VPS_HOST="${{ secrets.VPS_HOST }}"
+        DEPLOYMENT_ID="${{ needs.build-application.outputs.build-id }}"
+        
+        echo "📤 Uploading deployment bundle..."
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          backend-deployment.tar.gz \
+          $VPS_USER@$VPS_HOST:/tmp/backend-deployment-$DEPLOYMENT_ID.tar.gz
+          
+    - name: Create deployment script
+      run: |
+        cat > deploy_backend.sh << 'EOF'
+        #!/bin/bash
+        set -euo pipefail
+        
+        DEPLOYMENT_ID="$1"
+        echo "🎯 Executing backend deployment on VPS..."
+        
+        # Create deployment directory
+        DEPLOY_DIR="/opt/portfolio-backend"
+        sudo mkdir -p $DEPLOY_DIR
+        cd $DEPLOY_DIR
+        
+        # Stop existing backend processes
+        echo "🔄 Stopping existing backend processes..."
+        sudo pkill -f "node.*server.js" || true
+        sudo pkill -f "portfolio.*backend" || true
+        sleep 3
+        
+        # Backup current deployment
+        if [ -d backend ]; then
+          echo "📦 Backing up current deployment..."
+          sudo mv backend backend.backup.$(date +%s) || true
+        fi
+        
+        # Extract new deployment
+        echo "📂 Extracting new backend deployment..."
+        sudo tar -xzf /tmp/backend-deployment-$DEPLOYMENT_ID.tar.gz
+        sudo rm /tmp/backend-deployment-$DEPLOYMENT_ID.tar.gz
+        
+        # Verify deployment structure
+        echo "🔍 Verifying deployment structure:"
+        ls -la
+        
+        if [ ! -f "backend/apps/web/server.js" ]; then
+          echo "❌ Backend server.js not found in deployment"
+          find . -name "server.js" -type f || echo "No server.js files found"
+          exit 1
+        fi
+        
+        echo "✅ Backend server found at backend/apps/web/server.js"
+        
+        # Set proper permissions
+        sudo chown -R $(whoami):$(whoami) backend/
+        
+        # Set production environment variables
+        cat > backend/.env.production << 'ENVEOF'
+        NODE_ENV=production
+        PORT=3001
+        HOSTNAME=0.0.0.0
+        NEXT_PUBLIC_API_BASE_URL=http://108.175.12.154:3001/api
+        NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
+        ENVEOF
+        
+        # Verify Node.js version and start backend service
+        echo "🔍 Node.js version:"
+        node -v
+        
+        echo "🎯 Starting backend service..."
+        cd backend/apps/web
+        
+        # Load environment variables and start server
+        export $(cat ../../.env.production | xargs)
+        nohup node server.js > /tmp/portfolio-backend.log 2>&1 & echo $! > /tmp/portfolio-backend.pid
+        
+        # Wait for startup
+        sleep 10
+        
+        # Verify backend is running
+        if kill -0 $(cat /tmp/portfolio-backend.pid) 2>/dev/null; then
+          echo "✅ Backend service started successfully with PID:" $(cat /tmp/portfolio-backend.pid)
+          echo "📋 Last few log lines:"
+          tail -10 /tmp/portfolio-backend.log
+        else
+          echo "❌ Backend service failed to start"
+          echo "📋 Full startup logs:"
+          cat /tmp/portfolio-backend.log
+          exit 1
+        fi
+        
+        echo "🎉 Backend deployment completed successfully!"
+        EOF
+        
+    - name: Deploy backend on VPS
+      run: |
+        VPS_USER="${{ secrets.VPS_USER }}"
+        VPS_HOST="${{ secrets.VPS_HOST }}"
+        DEPLOYMENT_ID="${{ needs.build-application.outputs.build-id }}"
+        
+        echo "🚀 Starting backend deployment to $VPS_USER@$VPS_HOST..."
+        
+        # Upload deployment script
+        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
+          deploy_backend.sh \
+          $VPS_USER@$VPS_HOST:/tmp/deploy_backend.sh
+          
+        # Execute deployment script on VPS
+        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no $VPS_USER@$VPS_HOST \
+          "chmod +x /tmp/deploy_backend.sh && /tmp/deploy_backend.sh $DEPLOYMENT_ID"
+        
+    - name: Verify backend deployment
+      run: |
+        echo "🔍 Verifying backend deployment..."
+        VPS_HOST="${{ secrets.VPS_HOST }}"
+        
+        # Wait for backend to be fully ready
+        sleep 15
+        
+        # Health check for backend API
+        if curl -f -s -o /dev/null "http://$VPS_HOST:3001/api/health" 2>/dev/null; then
+          echo "✅ Backend API is accessible and healthy"
+        else
+          echo "⚠️ Backend API health check returned non-200 status (may be expected if /api/health doesn't exist)"
+          
+          # Try a basic connection test
+          if nc -z $VPS_HOST 3001 2>/dev/null; then
+            echo "✅ Backend service is listening on port 3001"
+          else
+            echo "❌ Backend service is not accessible on port 3001"
+            exit 1
+          fi
+        fi
+
+  # Deployment summary
+  deployment-summary:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-application, deploy-frontend, deploy-backend]
+    if: always()
+    
+    steps:
+    - name: Generate deployment summary
+      run: |
+        echo "# 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Build ID:** ${{ needs.build-application.outputs.build-id }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Triggered by:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 📊 Changes Detected" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend:** ${{ needs.detect-changes.outputs.frontend }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Backend:** ${{ needs.detect-changes.outputs.backend }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Shared:** ${{ needs.detect-changes.outputs.shared }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Documentation:** ${{ needs.detect-changes.outputs.docs }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 🎯 Deployment Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Component | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Build status
+        if [ "${{ needs.build-application.result }}" = "success" ]; then
+          echo "| 🏗️ Build | ✅ Success | Docker image built and verified |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🏗️ Build | ❌ Failed | Build process encountered errors |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Frontend deployment status
+        if [ "${{ needs.deploy-frontend.result }}" = "success" ]; then
+          echo "| 🌐 Frontend (Vercel) | ✅ Success | Deployed to production |" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.deploy-frontend.result }}" = "skipped" ]; then
+          echo "| 🌐 Frontend (Vercel) | ⏭️ Skipped | No frontend changes detected |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🌐 Frontend (Vercel) | ❌ Failed | Deployment encountered errors |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Backend deployment status
+        if [ "${{ needs.deploy-backend.result }}" = "success" ]; then
+          echo "| 🖥️ Backend (VPS) | ✅ Success | Deployed to VPS successfully |" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.deploy-backend.result }}" = "skipped" ]; then
+          echo "| 🖥️ Backend (VPS) | ⏭️ Skipped | No backend changes detected |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| 🖥️ Backend (VPS) | ❌ Failed | VPS deployment encountered errors |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔗 Access Points" >> $GITHUB_STEP_SUMMARY
+        echo "- **Frontend:** https://myportfolio.mysticdatanode.net" >> $GITHUB_STEP_SUMMARY
+        echo "- **Backend API:** http://108.175.12.154:3001/api" >> $GITHUB_STEP_SUMMARY
+        echo "- **API Documentation:** https://myportfolio.mysticdatanode.net/api-docs" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        # Overall status
+        if [ "${{ needs.build-application.result }}" = "success" ] && 
+           ([ "${{ needs.deploy-frontend.result }}" = "success" ] || [ "${{ needs.deploy-frontend.result }}" = "skipped" ]) && 
+           ([ "${{ needs.deploy-backend.result }}" = "success" ] || [ "${{ needs.deploy-backend.result }}" = "skipped" ]); then
+          echo "## ✅ Deployment Completed Successfully" >> $GITHUB_STEP_SUMMARY
+          echo "All components have been deployed successfully to production." >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ❌ Deployment Issues Detected" >> $GITHUB_STEP_SUMMARY
+          echo "Some components encountered issues during deployment. Please check the job logs for details." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+    - name: Check overall deployment status
+      run: |
+        if [ "${{ needs.build-application.result }}" = "failure" ]; then
+          echo "❌ Build failed"
+          exit 1
+        fi
+        
+        if [ "${{ needs.deploy-frontend.result }}" = "failure" ]; then
+          echo "❌ Frontend deployment failed"
+          exit 1
+        fi
+        
+        if [ "${{ needs.deploy-backend.result }}" = "failure" ]; then
+          echo "❌ Backend deployment failed"
+          exit 1
+        fi
+        
+        echo "✅ All deployments completed successfully (or were skipped appropriately)"
