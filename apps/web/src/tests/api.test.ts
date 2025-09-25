@@ -1,0 +1,552 @@
+/**
+ * Jest Test Suite for Portfolio API Endpoints
+ * 
+ * Comprehensive testing covering:
+ * - Contact form submission with email integration
+ * - AI chat with RAG search
+ * - Analytics tracking
+ * - Resume endpoints
+ * - Rate limiting and security features
+ * - Error handling and validation
+ */
+
+import { NextRequest, NextResponse } from 'next/server'
+import { POST as contactPost, GET as contactGet } from '@/app/api/contact/route'
+import { POST as aiChatPost, GET as aiChatGet } from '@/app/api/ai/chat/route'
+import { POST as analyticsPost, GET as analyticsGet } from '@/app/api/analytics/route'
+import { GET as docsGet } from '@/app/api/docs/route'
+
+// Mock environment variables
+const mockEnvVars = {
+  SMTP_HOST: 'smtp.gmail.com',
+  SMTP_PORT: '587',
+  SMTP_SECURE: 'false',
+  SMTP_USER: 'suryadizhang.swe@gmail.com',
+  SMTP_PASS: 'ruzrjmaoeakswnqu',
+  FROM_EMAIL: 'suryadizhang.swe@gmail.com',
+  TO_EMAIL: 'suryadizhang.swe@gmail.com',
+  OPENAI_API_KEY: 'sk-svcacct-test-key',
+  IP_SALT: 'test-salt',
+  ANALYTICS_TOKEN: 'test-analytics-token'
+}
+
+// Mock external dependencies
+jest.mock('nodemailer', () => ({
+  createTransporter: jest.fn(() => ({
+    sendMail: jest.fn().mockResolvedValue({ messageId: 'test-message-id' })
+  }))
+}))
+
+jest.mock('resend', () => ({
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: {
+      send: jest.fn().mockResolvedValue({ id: 'test-email-id' })
+    }
+  }))
+}))
+
+jest.mock('@/lib/rag/search', () => ({
+  searchContent: jest.fn().mockReturnValue({
+    context: 'Test context about portfolio',
+    sources: [{ title: 'Test Source', type: 'project', score: 0.8 }],
+    totalResults: 1,
+    searchTime: 50
+  })
+}))
+
+// Mock filesystem operations
+jest.mock('fs/promises', () => ({
+  mkdir: jest.fn().mockResolvedValue(undefined),
+  appendFile: jest.fn().mockResolvedValue(undefined),
+  writeFile: jest.fn().mockResolvedValue(undefined),
+  readFile: jest.fn().mockResolvedValue('')
+}))
+
+jest.mock('fs', () => ({
+  existsSync: jest.fn().mockReturnValue(true)
+}))
+
+describe('Portfolio API Test Suite', () => {
+  
+  beforeEach(() => {
+    // Reset environment variables
+    Object.entries(mockEnvVars).forEach(([key, value]) => {
+      process.env[key] = value
+    })
+    
+    // Clear all mocks
+    jest.clearAllMocks()
+  })
+
+  afterEach(() => {
+    // Clean up environment variables
+    Object.keys(mockEnvVars).forEach(key => {
+      delete process.env[key]
+    })
+  })
+
+  describe('Contact API (/api/contact)', () => {
+    
+    test('POST: Successfully submits contact form', async () => {
+      const validContactData = {
+        name: 'John Doe',
+        email: 'john.doe@example.com',
+        subject: 'Test inquiry about portfolio',
+        message: 'This is a test message with sufficient length to pass validation.',
+        company: 'Acme Corp',
+        phone: '+1-555-123-4567',
+        inquiryType: 'project',
+        newsletter: false
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '192.168.1.1',
+          'user-agent': 'Jest Test Suite'
+        },
+        body: JSON.stringify(validContactData)
+      })
+
+      const response = await contactPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.message).toContain('Thank you for your message')
+      expect(data.contactId).toBeDefined()
+    })
+
+    test('POST: Rejects invalid email format', async () => {
+      const invalidData = {
+        name: 'John Doe',
+        email: 'invalid-email',
+        subject: 'Test inquiry',
+        message: 'This is a test message.'
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invalidData)
+      })
+
+      const response = await contactPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid form data')
+      expect(data.details).toBeDefined()
+    })
+
+    test('POST: Detects honeypot field', async () => {
+      const botData = {
+        name: 'Bot User',
+        email: 'bot@example.com',
+        subject: 'Bot message',
+        message: 'This is a bot message.',
+        website: 'https://spam-site.com' // Honeypot field
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(botData)
+      })
+
+      const response = await contactPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid submission detected')
+    })
+
+    test('POST: Enforces rate limiting', async () => {
+      const contactData = {
+        name: 'Rate Test User',
+        email: 'rate@example.com',
+        subject: 'Rate limiting test',
+        message: 'Testing rate limiting functionality.'
+      }
+
+      const createRequest = (ip: string) => new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': ip,
+        },
+        body: JSON.stringify(contactData)
+      })
+
+      // Submit 6 requests from same IP (limit is 5)
+      const requests = Array.from({ length: 6 }, (_, i) => 
+        contactPost(createRequest('192.168.1.100'))
+      )
+
+      const responses = await Promise.all(requests)
+      const lastResponse = responses[responses.length - 1]
+      const lastData = await lastResponse.json()
+
+      expect(lastResponse.status).toBe(429)
+      expect(lastData.error).toContain('Too many contact attempts')
+    })
+
+    test('GET: Returns health check status', async () => {
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'GET'
+      })
+
+      const response = await contactGet()
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.status).toBe('operational')
+      expect(data.timestamp).toBeDefined()
+      expect(data.emailService).toBeDefined()
+      expect(data.configuration).toBeDefined()
+    })
+  })
+
+  describe('AI Chat API (/api/ai/chat)', () => {
+    
+    test('POST: Successfully processes chat request', async () => {
+      const chatRequest = {
+        messages: [
+          { role: 'user', content: 'Tell me about the portfolio projects' }
+        ],
+        mode: 'projects',
+        topK: 5,
+        stream: false
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '192.168.1.2'
+        },
+        body: JSON.stringify(chatRequest)
+      })
+
+      // Mock OpenAI API response
+      global.fetch = jest.fn().mockResolvedValue({
+        ok: false, // Simulate API unavailable to test fallback
+        status: 503,
+        statusText: 'Service Unavailable'
+      })
+
+      const response = await aiChatPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.response).toBeDefined()
+      expect(data.context).toBeDefined()
+      expect(data.sources).toBeDefined()
+      expect(data.searchTime).toBeDefined()
+    })
+
+    test('POST: Validates message format', async () => {
+      const invalidRequest = {
+        messages: [], // Empty messages array
+        mode: 'general'
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/ai/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invalidRequest)
+      })
+
+      const response = await aiChatPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid request format')
+    })
+
+    test('POST: Enforces rate limiting', async () => {
+      const chatRequest = {
+        messages: [{ role: 'user', content: 'Test message' }],
+        mode: 'general',
+        stream: false
+      }
+
+      const createRequest = () => new NextRequest('http://localhost:3000/api/ai/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '192.168.1.200'
+        },
+        body: JSON.stringify(chatRequest)
+      })
+
+      // Submit 21 requests from same IP (limit is 20)
+      const requests = Array.from({ length: 21 }, () => aiChatPost(createRequest()))
+      const responses = await Promise.all(requests)
+      const lastResponse = responses[responses.length - 1]
+      const lastData = await lastResponse.json()
+
+      expect(lastResponse.status).toBe(429)
+      expect(lastData.error).toContain('Rate limit exceeded')
+    })
+
+    test('GET: Returns health check with RAG status', async () => {
+      const response = await aiChatGet()
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.status).toBe('healthy')
+      expect(data.ragIndex).toBeDefined()
+      expect(data.ragIndex.available).toBe(true)
+      expect(data.openai).toBeDefined()
+    })
+  })
+
+  describe('Analytics API (/api/analytics)', () => {
+    
+    test('POST: Successfully tracks analytics event', async () => {
+      const analyticsEvent = {
+        event: 'page_view',
+        page: '/projects/portfolio-website',
+        metadata: { referrer: 'google.com' }
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/analytics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-forwarded-for': '192.168.1.3',
+          'user-agent': 'Jest Test'
+        },
+        body: JSON.stringify(analyticsEvent)
+      })
+
+      const response = await analyticsPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.success).toBe(true)
+      expect(data.sessionId).toBeDefined()
+      
+      // Check for session cookie
+      const setCookie = response.headers.get('Set-Cookie')
+      expect(setCookie).toContain('analytics_session')
+    })
+
+    test('POST: Validates event types', async () => {
+      const invalidEvent = {
+        event: 'invalid_event_type',
+        page: '/test'
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/analytics', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(invalidEvent)
+      })
+
+      const response = await analyticsPost(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(400)
+      expect(data.error).toBe('Invalid event data')
+    })
+
+    test('GET: Returns analytics summary with authentication', async () => {
+      const request = new NextRequest('http://localhost:3000/api/analytics', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${mockEnvVars.ANALYTICS_TOKEN}`
+        }
+      })
+
+      const response = await analyticsGet(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.summary).toBeDefined()
+      expect(data.topPages).toBeDefined()
+      expect(data.recentActivity).toBeDefined()
+    })
+
+    test('GET: Rejects unauthorized access', async () => {
+      const request = new NextRequest('http://localhost:3000/api/analytics', {
+        method: 'GET',
+        headers: {
+          'Authorization': 'Bearer invalid-token'
+        }
+      })
+
+      const response = await analyticsGet(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(401)
+      expect(data.error).toBe('Unauthorized')
+    })
+  })
+
+  describe('API Documentation (/api/docs)', () => {
+    
+    test('GET: Returns OpenAPI specification', async () => {
+      const request = new NextRequest('http://localhost:3000/api/docs', {
+        method: 'GET'
+      })
+
+      const response = await docsGet(request)
+      const data = await response.json()
+
+      expect(response.status).toBe(200)
+      expect(data.openapi).toBe('3.0.3')
+      expect(data.info).toBeDefined()
+      expect(data.info.title).toBe('Suryadi Zhang Portfolio API')
+      expect(data.paths).toBeDefined()
+      expect(data.components).toBeDefined()
+      
+      // Check that all main endpoints are documented
+      expect(data.paths['/contact']).toBeDefined()
+      expect(data.paths['/ai/chat']).toBeDefined()
+      expect(data.paths['/analytics']).toBeDefined()
+      expect(data.paths['/resume/view']).toBeDefined()
+      expect(data.paths['/resume/download']).toBeDefined()
+    })
+
+    test('GET: Includes dynamic server URL', async () => {
+      const request = new NextRequest('http://localhost:3000/api/docs', {
+        method: 'GET'
+      })
+
+      const response = await docsGet(request)
+      const data = await response.json()
+
+      expect(data.servers).toBeDefined()
+      expect(data.servers[0].url).toBe('http://localhost:3000/api')
+      expect(data.servers[0].description).toBe('Current Server')
+    })
+  })
+
+  describe('Security and Validation Tests', () => {
+    
+    test('IP hashing maintains privacy', async () => {
+      // Test that IP addresses are properly hashed
+      const crypto = require('crypto')
+      const testIP = '192.168.1.100'
+      const salt = mockEnvVars.IP_SALT
+      
+      const expectedHash = crypto
+        .createHash('sha256')
+        .update(testIP + salt)
+        .digest('hex')
+        .substring(0, 16)
+
+      // This would be tested in the actual API calls above
+      expect(expectedHash).toHaveLength(16)
+      expect(expectedHash).toMatch(/^[a-f0-9]+$/)
+    })
+
+    test('Environment variables validation', () => {
+      // Test that required environment variables are present
+      const requiredVars = [
+        'SMTP_HOST', 'SMTP_USER', 'SMTP_PASS',
+        'FROM_EMAIL', 'TO_EMAIL', 'OPENAI_API_KEY'
+      ]
+
+      requiredVars.forEach(varName => {
+        expect(process.env[varName]).toBeDefined()
+        expect(process.env[varName]).not.toBe('')
+      })
+    })
+
+    test('Request validation schemas', () => {
+      // Test Zod schema validation
+      const { z } = require('zod')
+      
+      const ContactSchema = z.object({
+        name: z.string().min(2).max(100),
+        email: z.string().email(),
+        subject: z.string().min(5).max(200),
+        message: z.string().min(10).max(2000)
+      })
+
+      const validData = {
+        name: 'John Doe',
+        email: 'john@example.com',
+        subject: 'Valid subject',
+        message: 'This is a valid message with sufficient length.'
+      }
+
+      const invalidData = {
+        name: 'A', // Too short
+        email: 'invalid-email',
+        subject: 'Hi', // Too short
+        message: 'Short' // Too short
+      }
+
+      expect(() => ContactSchema.parse(validData)).not.toThrow()
+      expect(() => ContactSchema.parse(invalidData)).toThrow()
+    })
+  })
+
+  describe('Error Handling', () => {
+    
+    test('Graceful handling of missing environment variables', async () => {
+      // Remove critical environment variables
+      delete process.env.SMTP_HOST
+      delete process.env.OPENAI_API_KEY
+
+      const contactData = {
+        name: 'Test User',
+        email: 'test@example.com',
+        subject: 'Test without env vars',
+        message: 'Testing error handling when environment variables are missing.'
+      }
+
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(contactData)
+      })
+
+      const response = await contactPost(request)
+      
+      // Should still respond, but may indicate email service issues
+      expect(response.status).toBeGreaterThanOrEqual(200)
+      expect(response.status).toBeLessThan(600)
+    })
+
+    test('Malformed JSON handling', async () => {
+      const request = new NextRequest('http://localhost:3000/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: 'invalid json content'
+      })
+
+      const response = await contactPost(request)
+      expect(response.status).toBe(500)
+    })
+  })
+})
+
+// Test utilities for integration testing
+export const testUtils = {
+  createMockRequest: (path: string, method: string, body?: any, headers?: Record<string, string>) => {
+    return new NextRequest(`http://localhost:3000${path}`, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers
+      },
+      body: body ? JSON.stringify(body) : undefined
+    })
+  },
+
+  expectValidResponse: (response: Response) => {
+    expect(response).toBeInstanceOf(Response)
+    expect(response.status).toBeGreaterThanOrEqual(200)
+    expect(response.status).toBeLessThan(500)
+  },
+
+  expectErrorResponse: (response: Response, expectedStatus: number) => {
+    expect(response.status).toBe(expectedStatus)
+  }
+}

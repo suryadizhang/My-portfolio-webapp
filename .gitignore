@@ -1,6 +1,7 @@
 # Local env vars
 .env*.local
 .env
+.env.local.backup
 
 # Dependencies
 node_modules/
@@ -44,3 +45,11 @@ apps/*/.next/
 # Turbo
 .turbo/
 .vercel
+
+# Security (additional protection)
+*.backup
+*.key
+*.pem
+*.secret
+secrets.json
+temp_security_test.txt
