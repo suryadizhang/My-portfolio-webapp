@@ -19,11 +19,11 @@ class TokenSigner:
 
     def sign(self, payload: Dict[str, Any], expires_in: int = 3600) -> str:
         """Sign a payload with expiration time
-        
+
         Args:
             payload: Data to sign
             expires_in: Expiration time in seconds (default 1 hour)
-        
+
         Returns:
             Signed token string
         """
@@ -57,13 +57,13 @@ class TokenSigner:
 
     def verify(self, token: str) -> Dict[str, Any]:
         """Verify and decode a signed token
-        
+
         Args:
             token: Signed token string
-        
+
         Returns:
             Decoded payload if valid
-        
+
         Raises:
             HTTPException: If token is invalid or expired
         """

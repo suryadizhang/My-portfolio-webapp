@@ -50,11 +50,11 @@ class RAGSearcher:
 
     def search(self, query: str, k: int = 4) -> List[Dict[str, Any]]:
         """Search for relevant documents
-        
+
         Args:
             query: Search query string
             k: Number of results to return
-        
+
         Returns:
             List of relevant documents with scores
         """
@@ -118,12 +118,12 @@ def search(query: str, k: int = 4) -> List[Dict[str, Any]]:
 
 def augment_prompt_with_context(base_prompt: str, query: str, k: int = 4) -> str:
     """Augment a prompt with RAG context
-    
+
     Args:
         base_prompt: Base system prompt
         query: User query to search for
         k: Number of documents to include
-    
+
     Returns:
         Augmented prompt with project context
     """

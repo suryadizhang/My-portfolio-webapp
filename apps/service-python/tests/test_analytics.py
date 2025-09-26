@@ -52,7 +52,7 @@ async def test_toggle_like_add(mock_kv):
 
     liked, count = await toggle_like("test-project", "user-session-123")
 
-    assert liked == True
+    assert liked
     assert count == 5
     mock_kv.sadd.assert_called_once_with("set:likes:test-project", "user-session-123")
     mock_kv.scard.assert_called_once_with("set:likes:test-project")

@@ -17,7 +17,7 @@ async def get_page_views(slug: str) -> int:
 
 async def toggle_like(slug: str, session_id: str) -> Tuple[bool, int]:
     """Toggle like status for a slug and session ID
-    
+
     Returns:
         Tuple of (is_liked, total_count)
     """
@@ -44,7 +44,7 @@ async def toggle_like(slug: str, session_id: str) -> Tuple[bool, int]:
 
 async def get_like_status(slug: str, session_id: str) -> Tuple[bool, int]:
     """Get like status for a slug and session ID
-    
+
     Returns:
         Tuple of (is_liked, total_count)
     """
