@@ -8,24 +8,66 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"],
-      "@portfolio/ui": ["../../packages/ui/src"],
-      "@portfolio/ui/*": ["../../packages/ui/src/*"],
-      "@portfolio/utils": ["../../packages/utils/src"],
-      "@portfolio/utils/*": ["../../packages/utils/src/*"],
-      "@portfolio/config": ["../../packages/config"],
-      "@portfolio/config/*": ["../../packages/config/*"],
-      "@ui": ["../../packages/ui/src"],
-      "@ui/*": ["../../packages/ui/src/*"],
-      "@utils": ["../../packages/utils/src"],
-      "@utils/*": ["../../packages/utils/src/*"],
-      "@config": ["../../packages/config"],
-      "@config/*": ["../../packages/config/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@portfolio/ui": [
+        "../../packages/ui/src"
+      ],
+      "@portfolio/ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@portfolio/utils": [
+        "../../packages/utils/src"
+      ],
+      "@portfolio/utils/*": [
+        "../../packages/utils/src/*"
+      ],
+      "@portfolio/config": [
+        "../../packages/config"
+      ],
+      "@portfolio/config/*": [
+        "../../packages/config/*"
+      ],
+      "@ui": [
+        "../../packages/ui/src"
+      ],
+      "@ui/*": [
+        "../../packages/ui/src/*"
+      ],
+      "@utils": [
+        "../../packages/utils/src"
+      ],
+      "@utils/*": [
+        "../../packages/utils/src/*"
+      ],
+      "@config": [
+        "../../packages/config"
+      ],
+      "@config/*": [
+        "../../packages/config/*"
+      ]
     },
-    "types": ["jest", "node", "@testing-library/jest-dom"]
+    "types": [
+      "jest",
+      "node",
+      "@testing-library/jest-dom"
+    ],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "jsx": "preserve"
   },
   "include": [
     "next-env.d.ts",
+    "app/**/*.ts",
+    "app/**/*.tsx",
     "src/**/*.ts",
     "src/**/*.tsx",
     ".next/types/**/*.ts"

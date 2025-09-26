@@ -1,8 +1,7 @@
-import { getAllProjects } from '../src/lib/content'
+import { projects } from '../src/data/projects'
 import type { MetadataRoute } from 'next'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const projects = getAllProjects()
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   const currentDate = new Date()
   
@@ -43,7 +42,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Dynamic project pages
   const projectPages: MetadataRoute.Sitemap = projects.map((project) => ({
     url: `${baseUrl}/projects/${project.slug}`,
-    lastModified: project.date ? new Date(project.date) : currentDate,
+    lastModified: currentDate,
     changeFrequency: 'monthly' as const,
     priority: 0.8,
   }))

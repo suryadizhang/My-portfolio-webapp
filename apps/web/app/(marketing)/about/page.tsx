@@ -70,16 +70,91 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Professional Summary */}
+        {/* Personal Story & Professional Journey */}
         <section className="mb-20">
           <div className="max-w-4xl mx-auto">
-            <div className="bg-gray-50 rounded-xl p-8">
+            <div className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 rounded-xl p-8 border border-blue-100">
               <div className="prose prose-lg max-w-none text-gray-700">
-                {profile.summary.split('\n\n').map((paragraph, index) => (
-                  <p key={index} className="mb-4 leading-relaxed">
-                    {paragraph.replace(/•/g, '').trim()}
+                <h3 className="text-2xl font-bold text-gray-900 mb-6">My Journey Into Software Engineering</h3>
+                
+                <p className="mb-6 leading-relaxed text-lg">
+                  I am a <strong className="text-blue-700">Full-Stack Software Engineer</strong> with real-world project experience delivering responsive web apps and robust APIs using React, Next.js, Python, FastAPI, and Postgres. My path into coding didn't begin in a classroom—it started with <strong className="text-purple-700">curiosity</strong>.
+                </p>
+
+                <p className="mb-6 leading-relaxed">
+                  I taught myself on <strong>YouTube</strong>, explored courses on <strong>Coursera</strong>, and eventually completed <strong className="text-green-700">Coding Temple's Software Engineering Bootcamp</strong>. Along the way, I discovered that problem-solving isn't just a skill for me—it's a <strong className="text-red-600">passion</strong>. I find energy and creativity in untangling complex challenges, sometimes even catching myself refining debugging ideas in my sleep.
+                </p>
+
+                <p className="mb-6 leading-relaxed">
+                  That curiosity and persistence have fueled me to build <strong>production-ready systems</strong>, including a live booking platform for my own startup. I thrive on <strong className="text-indigo-700">end-to-end ownership</strong>: shaping data models, designing APIs, and bringing features to life in the browser with CI/CD pipelines that ensure safe, frequent releases.
+                </p>
+
+                <div className="bg-white rounded-lg p-6 border-l-4 border-orange-400 my-8">
+                  <h4 className="text-xl font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <span className="text-2xl">👨‍🍳</span>
+                    Beyond Coding: The Art of Precision
+                  </h4>
+                  <p className="leading-relaxed text-gray-700">
+                    On weekends, I channel the same discipline as a <strong className="text-orange-600">private hibachi chef</strong>, where precision, timing, and creating a memorable experience mirror the principles I bring to engineering. Whether I'm perfecting a teppanyaki sequence or optimizing a database query, the attention to detail and commitment to excellence remain the same.
                   </p>
-                ))}
+                </div>
+
+                <h4 className="text-xl font-semibold text-gray-900 mb-4 mt-8">What Drives My Engineering Philosophy</h4>
+                
+                <div className="grid md:grid-cols-2 gap-6 mb-6">
+                  <div className="bg-white rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">🔍</span>
+                      <h5 className="font-semibold text-gray-900">Deep Problem Understanding</h5>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      I believe the best solutions come from truly understanding the problem space, not just implementing features.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">🚀</span>
+                      <h5 className="font-semibold text-gray-900">Continuous Improvement</h5>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Every project is an opportunity to learn something new and refine my craft.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">👥</span>
+                      <h5 className="font-semibold text-gray-900">Collaborative Growth</h5>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      I thrive in environments where knowledge sharing and collective problem-solving drive innovation.
+                    </p>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-5 border border-gray-200">
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="text-2xl">📈</span>
+                      <h5 className="font-semibold text-gray-900">Real Impact</h5>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      Code should solve real problems and create meaningful value for users and businesses.
+                    </p>
+                  </div>
+                </div>
+
+                <p className="mb-6 leading-relaxed">
+                  My self-taught background has given me a unique perspective on learning and problem-solving. I'm comfortable diving into unfamiliar territory, whether it's a new framework, debugging a complex integration, or architecting a system from scratch. This adaptability, combined with formal training from my bootcamp experience, has shaped me into an engineer who can bridge the gap between creative problem-solving and structured, scalable solutions.
+                </p>
+
+                <div className="bg-gray-100 rounded-lg p-6 mt-8">
+                  <p className="leading-relaxed text-gray-800 mb-0">
+                    <strong>Outside of coding:</strong> reading manga, playing video games, cooking, and exploring new frameworks. 
+                    I thrive in environments where <strong className="text-blue-700">curiosity</strong>, {' '}
+                    <strong className="text-green-700">collaboration</strong>, and {' '}
+                    <strong className="text-purple-700">shipping real value</strong> come first.
+                  </p>
+                </div>
               </div>
             </div>
           </div>

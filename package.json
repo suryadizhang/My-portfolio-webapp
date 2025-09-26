@@ -20,7 +20,9 @@
     "lint:fix": "turbo lint --fix",
     "check": "npm run typecheck && npm run lint && npm run test",
     "docker:smoke": "docker build -q . && node -e \"require.resolve('@portfolio/ui'); require.resolve('@portfolio/utils')\"",
-    "prepush": "npm run check && npm run docker:smoke",
+    "preflight": "node scripts/preflight.js",
+    "preflight:ps": "powershell -ExecutionPolicy Bypass -File scripts/preflight.ps1",
+    "prepush": "npm run preflight",
     "prepare": "husky"
   },
   "devDependencies": {

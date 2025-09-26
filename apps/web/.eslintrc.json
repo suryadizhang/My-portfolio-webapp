@@ -1,0 +1,29 @@
+{
+  "extends": [
+    "next/core-web-vitals",
+    "@portfolio/config/eslint/next"
+  ],
+  "env": {
+    "jest": true,
+    "node": true,
+    "browser": true
+  },
+  "overrides": [
+    {
+      "files": ["**/*.test.js", "**/*.test.ts", "**/*.test.tsx", "tests/**/*"],
+      "env": {
+        "jest": true
+      },
+      "globals": {
+        "describe": "readonly",
+        "test": "readonly",
+        "expect": "readonly",
+        "jest": "readonly",
+        "beforeEach": "readonly",
+        "afterEach": "readonly",
+        "beforeAll": "readonly",
+        "afterAll": "readonly"
+      }
+    }
+  ]
+}

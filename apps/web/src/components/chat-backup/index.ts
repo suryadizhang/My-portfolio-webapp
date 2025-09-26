@@ -1,6 +1,0 @@
-export { ChatDock } from './chat-dock'
-export { ChatDockWrapper } from './chat-dock-wrapper'
-export { MessageList } from './message-list'
-export { ChatInput } from './chat-input'
-export { ChatStorage } from './chat-storage'
-export * from './types'

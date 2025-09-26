@@ -7,6 +7,9 @@ export default function GlobalError({
   error: Error & { digest?: string }
   reset: () => void
 }) {
+  // Log error for debugging in production
+  console.error('Global error:', error);
+  
   return (
     <html>
       <body style={{ margin: 0, padding: 0, fontFamily: 'system-ui, sans-serif' }}>

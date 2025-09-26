@@ -1,11 +1,33 @@
 'use client';
-import dynamic from 'next/dynamic';
+import { Suspense, lazy, useState, useEffect } from 'react';
 
-const ChatWidget = dynamic(() => import('./ChatWidget'), { 
-  ssr: false, 
-  loading: () => null 
-});
+// Environment guard at module level
+const isChatEnabled = () => {
+  if (typeof window === 'undefined') return false;
+  return process.env.NEXT_PUBLIC_CHAT_ENABLED === 'true';
+};
+
+// Lazy load with error boundary
+const ChatWidget = lazy(() => 
+  import('./ChatWidget').catch(() => {
+    // Fallback if chat component fails to load
+    return { default: () => <div></div> };
+  })
+);
 
 export default function ChatWidgetWrapper() {
-  return <ChatWidget />;
+  const [shouldRender, setShouldRender] = useState(false);
+  
+  useEffect(() => {
+    // Client-side only check after hydration
+    setShouldRender(isChatEnabled());
+  }, []);
+
+  if (!shouldRender) return null;
+
+  return (
+    <Suspense fallback={null}>
+      <ChatWidget />
+    </Suspense>
+  );
 }

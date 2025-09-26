@@ -1,6 +1,7 @@
 /**
  * Email System Integration Test
  * Tests the complete email workflow without actually sending emails
+ * @jest-environment jsdom
  */
 
 const crypto = require('crypto')
@@ -64,7 +65,7 @@ class MockResend {
 }
 
 class MockNodemailer {
-  static createTransporter(config) {
+  static createTransporter(/* config */) {
     return {
       sendMail: async (params) => {
         // Validate required params
@@ -77,81 +78,38 @@ class MockNodemailer {
   }
 }
 
-// Run integration tests
-async function runEmailIntegrationTests() {
-  console.log('🧪 Starting Email System Integration Tests...\n')
-  
-  let passedTests = 0
-  let totalTests = 0
-  
-  // Test 1: HTML Escaping Security
-  console.log('1️⃣ Testing HTML Escaping Security...')
-  totalTests++
-  const maliciousInput = '<script>alert("XSS")</script>'
-  const escapedOutput = escapeHtml(maliciousInput)
-  const expectedOutput = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
-  
-  if (escapedOutput === expectedOutput) {
-    console.log('   ✅ HTML escaping working correctly')
-    console.log(`   Input: ${maliciousInput}`)
-    console.log(`   Output: ${escapedOutput}`)
-    passedTests++
-  } else {
-    console.log('   ❌ HTML escaping failed')
-    console.log(`   Expected: ${expectedOutput}`)
-    console.log(`   Got: ${escapedOutput}`)
-  }
-  console.log()
-  
-  // Test 2: Rate Limiting System
-  console.log('2️⃣ Testing Rate Limiting System...')
-  totalTests++
-  const rateLimiter = createContactRateLimit()
-  const testIP = '192.168.1.100'
-  
-  let rateLimitTest = true
-  // Allow first 5 requests
-  for (let i = 0; i < 5; i++) {
-    if (!rateLimiter(testIP)) {
-      rateLimitTest = false
-      break
+describe('Email System Integration', () => {
+  test('HTML Escaping Security', () => {
+    const maliciousInput = '<script>alert("XSS")</script>'
+    const escapedOutput = escapeHtml(maliciousInput)
+    const expectedOutput = '&lt;script&gt;alert(&quot;XSS&quot;)&lt;/script&gt;'
+    
+    expect(escapedOutput).toBe(expectedOutput)
+  })
+
+  test('Rate Limiting System', () => {
+    const rateLimiter = createContactRateLimit()
+    const testIP = '192.168.1.100'
+    
+    // Allow first 5 requests
+    for (let i = 0; i < 5; i++) {
+      expect(rateLimiter(testIP)).toBe(true)
     }
-  }
-  
-  // 6th request should be blocked
-  if (rateLimiter(testIP)) {
-    rateLimitTest = false
-  }
-  
-  if (rateLimitTest) {
-    console.log('   ✅ Rate limiting working correctly (5 requests allowed, 6th blocked)')
-    passedTests++
-  } else {
-    console.log('   ❌ Rate limiting failed')
-  }
-  console.log()
-  
-  // Test 3: IP Hashing Privacy
-  console.log('3️⃣ Testing IP Hashing Privacy...')
-  totalTests++
-  const testIPAddress = '192.168.1.100'
-  const hashedIP = hashIP(testIPAddress)
-  
-  if (hashedIP.length === 16 && hashedIP !== testIPAddress && /^[a-f0-9]+$/i.test(hashedIP)) {
-    console.log('   ✅ IP hashing working correctly')
-    console.log(`   Original IP: ${testIPAddress}`)
-    console.log(`   Hashed IP: ${hashedIP}`)
-    passedTests++
-  } else {
-    console.log('   ❌ IP hashing failed')
-    console.log(`   Hash result: ${hashedIP}`)
-  }
-  console.log()
-  
-  // Test 4: Resend Email Service Mock
-  console.log('4️⃣ Testing Resend Email Service Integration...')
-  totalTests++
-  try {
+    
+    // 6th request should be blocked
+    expect(rateLimiter(testIP)).toBe(false)
+  })
+
+  test('IP Hashing Privacy', () => {
+    const testIPAddress = '192.168.1.100'
+    const hashedIP = hashIP(testIPAddress)
+    
+    expect(hashedIP).toHaveLength(16)
+    expect(hashedIP).not.toBe(testIPAddress)
+    expect(/^[a-f0-9]+$/i.test(hashedIP)).toBe(true)
+  })
+
+  test('Resend Email Service Integration', async () => {
     const mockResend = new MockResend('test-api-key')
     const result = await mockResend.emails.send({
       from: 'test@example.com',
@@ -160,22 +118,11 @@ async function runEmailIntegrationTests() {
       html: '<h1>Test Content</h1>'
     })
     
-    if (result.id && result.id.startsWith('mock-email-id-')) {
-      console.log('   ✅ Resend email service integration working')
-      console.log(`   Mock email ID: ${result.id}`)
-      passedTests++
-    } else {
-      console.log('   ❌ Resend email service integration failed')
-    }
-  } catch (error) {
-    console.log('   ❌ Resend email service integration failed:', error.message)
-  }
-  console.log()
-  
-  // Test 5: Nodemailer Fallback System
-  console.log('5️⃣ Testing Nodemailer Fallback Integration...')
-  totalTests++
-  try {
+    expect(result.id).toBeDefined()
+    expect(result.id).toMatch(/^mock-email-id-\d+$/)
+  })
+
+  test('Nodemailer Fallback Integration', async () => {
     const mockTransporter = MockNodemailer.createTransporter({
       host: 'smtp.gmail.com',
       port: 587,
@@ -190,76 +137,34 @@ async function runEmailIntegrationTests() {
       text: 'Test content'
     })
     
-    if (result.messageId && result.messageId.startsWith('mock-nodemailer-id-')) {
-      console.log('   ✅ Nodemailer fallback integration working')
-      console.log(`   Mock message ID: ${result.messageId}`)
-      passedTests++
-    } else {
-      console.log('   ❌ Nodemailer fallback integration failed')
+    expect(result.messageId).toBeDefined()
+    expect(result.messageId).toMatch(/^mock-nodemailer-id-\d+$/)
+  })
+
+  test('Email Template Security', () => {
+    const testContactData = {
+      name: '<script>alert("hack")</script>John Doe',
+      email: 'john@example.com',
+      subject: 'Test & "Quote" Subject',
+      message: 'Hello <world> & "everyone"',
+      company: 'Test & Co.',
+      inquiryType: 'general'
     }
-  } catch (error) {
-    console.log('   ❌ Nodemailer fallback integration failed:', error.message)
-  }
-  console.log()
-  
-  // Test 6: Email Template Security
-  console.log('6️⃣ Testing Email Template Security...')
-  totalTests++
-  const testContactData = {
-    name: '<script>alert("hack")</script>John Doe',
-    email: 'john@example.com',
-    subject: 'Test & "Quote" Subject',
-    message: 'Hello <world> & "everyone"',
-    company: 'Test & Co.',
-    inquiryType: 'general'
-  }
-  
-  // Simulate email template generation
-  const safeTemplate = `
+    
+    // Simulate email template generation
+    const safeTemplate = `
 <h1>Thank you, ${escapeHtml(testContactData.name)}!</h1>
 <p>Subject: ${escapeHtml(testContactData.subject)}</p>
 <p>Message: ${escapeHtml(testContactData.message)}</p>
 <p>Company: ${escapeHtml(testContactData.company)}</p>
-  `.trim()
-  
-  const hasUnsafeContent = safeTemplate.includes('<script>') || 
-                           (safeTemplate.includes('alert(') && !safeTemplate.includes('&quot;')) ||
-                           safeTemplate.includes('javascript:')
-  
-  if (!hasUnsafeContent && safeTemplate.includes('&lt;script&gt;') && safeTemplate.includes('&amp;')) {
-    console.log('   ✅ Email templates properly escaped against XSS')
-    console.log('   Script tags and special characters converted to safe HTML entities')
-    passedTests++
-  } else {
-    console.log('   ❌ Email template security failed')
-    console.log('   Template content:', safeTemplate.substring(0, 100) + '...')
-    console.log('   Has unsafe content:', hasUnsafeContent)
-    console.log('   Has escaped script:', safeTemplate.includes('&lt;script&gt;'))
-    console.log('   Has escaped ampersand:', safeTemplate.includes('&amp;'))
-  }
-  console.log()
-  
-  // Final Results
-  console.log('📊 Test Results Summary:')
-  console.log(`✅ Passed: ${passedTests}/${totalTests} tests`)
-  console.log(`${passedTests === totalTests ? '🎉 All tests PASSED! Email system is secure and functional.' : '⚠️ Some tests FAILED. Review issues above.'}`)
-  
-  if (passedTests === totalTests) {
-    console.log('\n🚀 Email Integration Status: PRODUCTION READY')
-    console.log('✓ XSS Protection: Implemented')
-    console.log('✓ Rate Limiting: Active')
-    console.log('✓ Privacy Protection: IP Hashing')
-    console.log('✓ Dual Email Service: Resend + Gmail SMTP Fallback')
-    console.log('✓ Template Security: HTML Escaping')
-  }
-  
-  return passedTests === totalTests
-}
-
-// Run the tests
-runEmailIntegrationTests()
-  .then(success => process.exit(success ? 0 : 1))
-  .catch(error => {
-    console.error('❌ Test suite failed:', error)
-    process.exit(1)
+    `.trim()
+    
+    const hasUnsafeContent = safeTemplate.includes('<script>') || 
+                             (safeTemplate.includes('alert(') && !safeTemplate.includes('&quot;')) ||
+                             safeTemplate.includes('javascript:')
+    
+    expect(hasUnsafeContent).toBe(false)
+    expect(safeTemplate).toContain('&lt;script&gt;')
+    expect(safeTemplate).toContain('&amp;')
   })
+})

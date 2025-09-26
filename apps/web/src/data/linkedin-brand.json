@@ -1,0 +1,93 @@
+{
+  "brand": {
+    "name": "Suryadi Zhang",
+    "tagline": "Full-Stack Software Engineer",
+    "description": "Transforming ideas into production-ready applications with React/Next.js, Python/FastAPI, and cloud infrastructure.",
+    "colors": {
+      "primary": "#0A66C2",
+      "primaryHover": "#004182",
+      "secondary": "#70B5F9",
+      "accent": "#F3F2EF",
+      "text": "#000000DE",
+      "textSecondary": "#00000099"
+    },
+    "tone": {
+      "voice": "Professional yet approachable",
+      "style": "Clear, concise, and results-focused",
+      "personality": "Confident, collaborative, problem-solving minded"
+    }
+  },
+  "profile": {
+    "headline": "Full-Stack Software Engineer | React/Next.js + Python/FastAPI + Cloud Infrastructure",
+    "summary": "I build production-ready applications that solve real business problems. From interactive booking systems to robust APIs, I focus on clean code, seamless user experiences, and scalable architecture. My expertise spans the entire development stack, with particular strength in modern web technologies and DevOps practices.",
+    "location": "Open to Remote & Hybrid Opportunities",
+    "experience": [
+      {
+        "title": "Full-Stack Software Engineer",
+        "company": "Independent Consultant",
+        "duration": "2023 - Present",
+        "highlights": [
+          "Built end-to-end booking and management systems with React/Next.js and Python/FastAPI",
+          "Implemented secure authentication, payment processing, and real-time notifications",
+          "Designed scalable PostgreSQL schemas and optimized query performance",
+          "Established CI/CD pipelines with GitHub Actions and containerized deployment"
+        ]
+      }
+    ],
+    "skills": {
+      "frontend": ["React", "Next.js", "TypeScript", "Tailwind CSS", "HTML5/CSS3"],
+      "backend": ["Python", "FastAPI", "Node.js", "REST APIs", "GraphQL"],
+      "database": ["PostgreSQL", "MongoDB", "Redis", "Prisma ORM"],
+      "cloud": ["Docker", "AWS", "Vercel", "GitHub Actions", "Nginx"],
+      "tools": ["Git", "VS Code", "Postman", "Figma", "Linear"]
+    },
+    "achievements": [
+      "Reduced API response times by 60% through database optimization and caching strategies",
+      "Built automated testing suites achieving 90%+ code coverage",
+      "Implemented zero-downtime deployment processes with Docker and reverse proxy",
+      "Created responsive designs that work seamlessly across all device sizes"
+    ]
+  },
+  "content": {
+    "posts": [
+      {
+        "title": "Building Production-Ready Next.js Applications",
+        "excerpt": "Key patterns I use to ensure scalability and maintainability in modern web apps.",
+        "topics": ["Next.js", "React", "Performance", "Best Practices"]
+      },
+      {
+        "title": "From Monolith to Microservices: API Design Patterns",
+        "excerpt": "How proper API design can make or break your application architecture.",
+        "topics": ["API Design", "FastAPI", "Microservices", "Architecture"]
+      },
+      {
+        "title": "Docker + GitHub Actions: The Perfect DevOps Combo",
+        "excerpt": "Streamlining deployment with containerization and automated CI/CD pipelines.",
+        "topics": ["Docker", "CI/CD", "DevOps", "GitHub Actions"]
+      }
+    ],
+    "projects": [
+      {
+        "name": "Live Booking Platform",
+        "description": "Full-stack booking system with real-time availability, payment processing, and admin dashboard.",
+        "technologies": ["Next.js", "FastAPI", "PostgreSQL", "Stripe", "Docker"],
+        "impact": "Increased booking efficiency by 75% and reduced manual processes"
+      },
+      {
+        "name": "API Documentation Generator",
+        "description": "Automated tool for generating beautiful, interactive API documentation from OpenAPI specs.",
+        "technologies": ["Python", "FastAPI", "Swagger UI", "Docker"],
+        "impact": "Reduced documentation time by 80% and improved developer experience"
+      }
+    ]
+  },
+  "cta": {
+    "primary": "Let's build something amazing together",
+    "secondary": "I'm passionate about creating software that makes a real difference. Whether you're looking to build a new application, optimize existing systems, or establish better development practices, I'd love to collaborate.",
+    "contact": {
+      "email": "Let's connect and discuss your next project",
+      "linkedin": "Connect with me on LinkedIn",
+      "github": "Check out my code on GitHub"
+    }
+  }
+}

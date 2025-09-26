@@ -1,8 +1,8 @@
-import { getAllProjects, type ProjectFrontmatter } from '@/lib/content'
+import { projects, getFeaturedProjects, type Project } from '@/data/projects'
 import { generateSiteMetadata } from '@/lib/seo'
 import { ProjectImage } from '@/components/project-image'
 import { Badge, Button, Card, CardContent, CardHeader, CardTitle } from '@portfolio/ui'
-import { ExternalLink, Github, Calendar, Code2, Star, TrendingUp, Zap, Users } from 'lucide-react'
+import { ExternalLink, Github, Code2, Star, TrendingUp, Zap, Users } from 'lucide-react'
 import Link from 'next/link'
 
 export const metadata = generateSiteMetadata(
@@ -12,8 +12,7 @@ export const metadata = generateSiteMetadata(
 )
 
 export default function ProjectsPage() {
-  const projects = getAllProjects()
-  const featuredProjects = projects.filter(p => p.featured)
+  const featuredProjects = getFeaturedProjects()
   const otherProjects = projects.filter(p => !p.featured)
 
   return (
@@ -70,20 +69,20 @@ export default function ProjectsPage() {
           </div>
           
           <div className="space-y-12">
-            {featuredProjects.map((project: ProjectFrontmatter, index: number) => (
+            {featuredProjects.map((project: Project, index: number) => (
               <Card key={project.slug} className="overflow-hidden border-2 hover:border-blue-200 transition-all duration-300 hover:shadow-xl">
                 <div className={`grid lg:grid-cols-2 gap-0 ${index % 2 === 1 ? 'lg:flex-row-reverse' : ''}`}>
                   {/* Image Section */}
                   <div className={`relative ${index % 2 === 1 ? 'lg:order-2' : ''}`}>
                     <ProjectImage
-                      src={project.cover || project.image}
+                      src={project.image}
                       alt={project.title}
                       title={project.title}
                       className="h-80 lg:h-full"
                     />
                     <div className="absolute top-4 left-4">
                       <Badge className="bg-green-100 text-green-800 font-semibold">
-                        {project.status || 'Live'}
+                        Live
                       </Badge>
                     </div>
                   </div>
@@ -92,11 +91,11 @@ export default function ProjectsPage() {
                   <div className={`p-8 flex flex-col justify-center ${index % 2 === 1 ? 'lg:order-1' : ''}`}>
                     <div className="mb-4">
                       <Badge variant="secondary" className="mb-3 bg-blue-100 text-blue-800">
-                        {project.category || 'Full-Stack Application'}
+                        Full-Stack Application
                       </Badge>
                       <h3 className="text-3xl font-bold mb-3">{project.title}</h3>
                       <p className="text-gray-600 mb-4 leading-relaxed">
-                        {project.longDescription || project.description}
+                        {project.description}
                       </p>
                     </div>
                     
@@ -118,12 +117,7 @@ export default function ProjectsPage() {
                     </div>
                     
                     {/* Timeline */}
-                    {project.timeline && (
-                      <div className="mb-6 flex items-center gap-2 text-gray-600">
-                        <Calendar className="h-4 w-4" />
-                        <span className="text-sm">{project.timeline}</span>
-                      </div>
-                    )}
+
                     
                     {/* Action Buttons */}
                     <div className="flex flex-col sm:flex-row gap-3">
@@ -132,17 +126,17 @@ export default function ProjectsPage() {
                           View Case Study
                         </Link>
                       </Button>
-                      {(project.links?.live || project.liveUrl) && (
+                      {project.live && (
                         <Button variant="outline" asChild>
-                          <a href={project.links?.live || project.liveUrl} target="_blank" rel="noopener noreferrer">
+                          <a href={project.live} target="_blank" rel="noopener noreferrer">
                             <ExternalLink className="h-4 w-4 mr-2" />
                             Live Demo
                           </a>
                         </Button>
                       )}
-                      {(project.links?.repo || project.repository) && (
+                      {project.repo && (
                         <Button variant="outline" asChild>
-                          <a href={project.links?.repo || project.repository} target="_blank" rel="noopener noreferrer">
+                          <a href={project.repo} target="_blank" rel="noopener noreferrer">
                             <Github className="h-4 w-4 mr-2" />
                             Source Code
                           </a>
@@ -166,11 +160,11 @@ export default function ProjectsPage() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {otherProjects.map((project: ProjectFrontmatter) => (
+            {otherProjects.map((project: Project) => (
               <Card key={project.slug} className="group hover:shadow-xl transition-all duration-300 border-2 hover:border-blue-200">
                 <div className="aspect-video relative overflow-hidden">
                   <ProjectImage
-                    src={project.cover || project.image}
+                    src={project.image}
                     alt={project.title}
                     title={project.title}
                     className="h-full"
@@ -183,11 +177,7 @@ export default function ProjectsPage() {
                     <CardTitle className="text-xl group-hover:text-blue-600 transition-colors">
                       {project.title}
                     </CardTitle>
-                    {project.year && (
-                      <span className="text-sm text-gray-500 bg-gray-100 px-2 py-1 rounded">
-                        {project.year}
-                      </span>
-                    )}
+
                   </div>
                   <p className="text-gray-600 text-sm leading-relaxed">
                     {project.description || project.summary}
@@ -211,16 +201,16 @@ export default function ProjectsPage() {
                         View Details
                       </Link>
                     </Button>
-                    {(project.links?.live || project.liveUrl) && (
+                    {project.live && (
                       <Button size="sm" variant="outline" asChild>
-                        <a href={project.links?.live || project.liveUrl} target="_blank" rel="noopener noreferrer">
+                        <a href={project.live} target="_blank" rel="noopener noreferrer">
                           <ExternalLink className="h-4 w-4" />
                         </a>
                       </Button>
                     )}
-                    {(project.links?.repo || project.repository) && (
+                    {project.repo && (
                       <Button size="sm" variant="outline" asChild>
-                        <a href={project.links?.repo || project.repository} target="_blank" rel="noopener noreferrer">
+                        <a href={project.repo} target="_blank" rel="noopener noreferrer">
                           <Github className="h-4 w-4" />
                         </a>
                       </Button>
