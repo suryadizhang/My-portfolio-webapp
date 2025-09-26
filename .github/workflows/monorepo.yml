@@ -1,4 +1,4 @@
-name: CI/CD (Smart Monorepo)
+name: "CI/CD Pipeline"
 
 on:
   push:

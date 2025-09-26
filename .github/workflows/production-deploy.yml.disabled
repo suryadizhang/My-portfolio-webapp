@@ -1,8 +1,10 @@
-name: "Production Deployment"
+# DISABLED: This workflow has been replaced by monorepo.yml (Smart CI/CD)
+# Rename back to .yml to re-enable
+name: "Production Deployment (DISABLED)"
 
 on:
-  push:
-    branches: [ main ]
+  # push:
+  #   branches: [ main ]
   workflow_dispatch:
     inputs:
       force_deploy:
