@@ -57,5 +57,8 @@ COPY --from=build /repo/apps/web/public ./apps/web/public
 # Verify server.js is in the correct monorepo path
 RUN test -f ./apps/web/server.js || (echo "❌ server.js not found at ./apps/web/server.js" && find . -name "server.js" && exit 1)
 
+# Final verification and startup
 EXPOSE 3000
+
+# Updated 2025-09-26: Ensure CMD is properly set for portfolio-web container
 CMD ["node", "apps/web/server.js"]

@@ -10,8 +10,7 @@ from app.routes.chat import ChatMessage, ChatRequest
 @pytest.fixture
 def client():
     """Create a test client fixture"""
-    with TestClient(app) as test_client:
-        yield test_client
+    return TestClient(app)
 
 def test_chat_message_validation():
     """Test ChatMessage model validation"""
