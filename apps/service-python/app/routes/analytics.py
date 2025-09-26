@@ -1,11 +1,14 @@
-from fastapi import APIRouter, Request, HTTPException
+
+from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
-from typing import Optional
+
 from ..core.analytics import (
-    log_page_view, get_page_views,
-    toggle_like, get_like_status,
+    get_chat_stats,
+    get_like_status,
+    get_page_views,
     get_resume_downloads,
-    get_chat_stats
+    log_page_view,
+    toggle_like,
 )
 
 router = APIRouter()
@@ -51,7 +54,7 @@ async def toggle_like_endpoint(request: Request, like_request: LikeRequest):
     session_id = request.cookies.get("sid")
     if not session_id:
         raise HTTPException(status_code=400, detail="Session ID required")
-    
+
     liked, count = await toggle_like(like_request.slug, session_id)
     return LikeResponse(liked=liked, count=count)
 
@@ -62,7 +65,7 @@ async def get_like_status_endpoint(request: Request, slug: str):
     if not session_id:
         # Return default state for users without session
         return LikeResponse(liked=False, count=0)
-    
+
     liked, count = await get_like_status(slug, session_id)
     return LikeResponse(liked=liked, count=count)
 
@@ -78,15 +81,15 @@ async def get_analytics_summary(range: str = "7d"):
     # Parse range (for now, just support days)
     try:
         days = int(range.rstrip('d'))
-    except:
+    except ValueError:
         days = 7
-    
+
     # Get chat statistics
     chat_stats = await get_chat_stats(days)
-    
+
     # Get resume downloads
     resume_downloads = await get_resume_downloads()
-    
+
     return AnalyticsSummaryResponse(
         viewsBySlug={},  # TODO: Implement if needed
         likesTop=[],     # TODO: Implement if needed
@@ -96,7 +99,7 @@ async def get_analytics_summary(range: str = "7d"):
         },
         chat={
             "sessionsDaily": [
-                {"date": date, "count": count} 
+                {"date": date, "count": count}
                 for date, count in chat_stats["sessions_by_day"].items()
             ],
             "tokensDaily": [

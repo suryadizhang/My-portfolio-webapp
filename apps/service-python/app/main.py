@@ -1,15 +1,13 @@
-from fastapi import FastAPI, Request, Response
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import JSONResponse
 import os
 import uuid
+
 from dotenv import load_dotenv
+from fastapi import FastAPI, Request
+from fastapi.middleware.cors import CORSMiddleware
+from .routes import analytics, chat, health, resume
 
 # Load environment variables
 load_dotenv()
-
-# Import routes
-from .routes import health, chat, analytics, resume
 
 app = FastAPI(
     title="Portfolio API",
@@ -31,7 +29,7 @@ app.add_middleware(
 async def add_session_id(request: Request, call_next):
     """Add session ID cookie if not present"""
     response = await call_next(request)
-    
+
     # Check if session ID cookie exists
     sid = request.cookies.get("sid")
     if not sid:
@@ -44,7 +42,7 @@ async def add_session_id(request: Request, call_next):
             secure=False,  # Set to True in production with HTTPS
             max_age=86400 * 365  # 1 year
         )
-    
+
     return response
 
 # Include routers
