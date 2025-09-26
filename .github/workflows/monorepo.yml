@@ -163,9 +163,25 @@ jobs:
       - name: Verify standalone output
         if: github.event_name != 'pull_request'
         run: |
-          # Quick smoke test of the built image
+          # Verify server.js exists in container
+          echo "🔍 Verifying standalone output structure..."
           docker run --rm --entrypoint="" ${{ steps.meta.outputs.tags }} \
-            sh -c "test -f /app/apps/web/server.js || (echo '❌ Standalone server.js missing' && exit 1)"
+            sh -c "test -f /app/apps/web/server.js || (echo '❌ Standalone server.js missing' && ls -la /app/apps/web/ && exit 1)"
+          
+          # Quick smoke test - start container and verify it runs
+          echo "🧪 Running container smoke test..."
+          docker run --rm -d --name test-web -p 3001:3000 ${{ steps.meta.outputs.tags }}
+          sleep 3
+          
+          if docker ps | grep -q test-web; then
+            echo "✅ Web container is running"
+            docker stop test-web
+          else
+            echo "❌ Web container failed to start"
+            docker logs test-web || true
+            exit 1
+          fi
+          
           echo "✅ Docker image verification passed"
 
   # ---------- PYTHON SERVICE ----------  
