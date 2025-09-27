@@ -273,6 +273,11 @@ jobs:
           
           echo '🚀 Starting VPS deployment...'
           
+          # Create deployment directory structure if it doesn't exist
+          echo '📁 Setting up deployment directories...'
+          mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app
+          mkdir -p /var/backups/portfolio
+          
           # Navigate to app directory
           cd /var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app
           
@@ -282,12 +287,18 @@ jobs:
             echo '⚠️ Warning: .env.local not found - some features may not work'
           fi
           
-          # Ensure production config exists
+          # Ensure production config exists or create basic one
           if [ ! -f '.env.production' ]; then
-            echo '❌ .env.production missing!'
-            exit 1
+            echo '📝 Creating basic .env.production file...'
+            echo 'NODE_ENV=production' > .env.production
+            echo 'NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api' >> .env.production
+            echo 'NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net' >> .env.production
+            echo 'PORT=3000' >> .env.production
+            echo 'HOSTNAME=localhost' >> .env.production
+            echo '✅ Basic production environment created'
+          else
+            echo '✅ Environment configuration validated'
           fi
-          echo '✅ Environment configuration validated'
           
           # Create backup
           if [ -d '.next' ]; then
