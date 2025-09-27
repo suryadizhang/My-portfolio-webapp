@@ -53,51 +53,53 @@ def test_chat_request_validation():
     with pytest.raises(ValueError):
         ChatRequest(messages=messages, topk=11)
 
-@patch('app.routes.chat.get_openai_stream')
-@patch('app.routes.chat.log_analytics')
-def test_chat_endpoint_general_mode(mock_log_analytics, mock_openai_stream, client):
+def test_chat_endpoint_general_mode(client):
     """Test chat endpoint in general mode"""
-    # Mock streaming response
-    async def mock_stream(messages):
-        yield "Hello"
-        yield " there!"
+    with patch('app.routes.chat.get_openai_stream') as mock_openai_stream, \
+         patch('app.routes.chat.log_analytics') as mock_log_analytics:
+        
+        # Mock streaming response
+        async def mock_stream(messages):
+            yield "Hello"
+            yield " there!"
 
-    mock_openai_stream.return_value = mock_stream(None)
-    mock_log_analytics.return_value = AsyncMock()
+        mock_openai_stream.return_value = mock_stream(None)
+        mock_log_analytics.return_value = AsyncMock()
 
-    response = client.post("/ai/chat", json={
-        "messages": [{"role": "user", "content": "Hello"}],
-        "mode": "general"
-    })
+        response = client.post("/ai/chat", json={
+            "messages": [{"role": "user", "content": "Hello"}],
+            "mode": "general"
+        })
 
-    assert response.status_code == 200
-    assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
+        assert response.status_code == 200
+        assert response.headers["content-type"] == "text/event-stream; charset=utf-8"
 
-@patch('app.routes.chat.get_openai_stream')
-@patch('app.routes.chat.log_analytics')
-@patch('app.core.rag.augment_prompt_with_context')
-def test_chat_endpoint_projects_mode(mock_augment, mock_log_analytics, mock_openai_stream, client):
+def test_chat_endpoint_projects_mode(client):
     """Test chat endpoint in projects mode with RAG"""
-    # Mock RAG augmentation
-    mock_augment.return_value = "Augmented prompt with project context"
+    with patch('app.routes.chat.get_openai_stream') as mock_openai_stream, \
+         patch('app.routes.chat.log_analytics') as mock_log_analytics, \
+         patch('app.core.rag.augment_prompt_with_context') as mock_augment:
+        
+        # Mock RAG augmentation
+        mock_augment.return_value = "Augmented prompt with project context"
 
-    # Mock streaming response
-    async def mock_stream(messages):
-        yield "Project info: "
-        yield "AI platform details..."
+        # Mock streaming response
+        async def mock_stream(messages):
+            yield "Project info: "
+            yield "AI platform details..."
 
-    mock_openai_stream.return_value = mock_stream(None)
-    mock_log_analytics.return_value = AsyncMock()
+        mock_openai_stream.return_value = mock_stream(None)
+        mock_log_analytics.return_value = AsyncMock()
 
-    response = client.post("/ai/chat", json={
-        "messages": [{"role": "user", "content": "Tell me about your AI projects"}],
-        "mode": "projects",
-        "topk": 3
-    })
+        response = client.post("/ai/chat", json={
+            "messages": [{"role": "user", "content": "Tell me about your AI projects"}],
+            "mode": "projects",
+            "topk": 3
+        })
 
-    assert response.status_code == 200
-    # Verify RAG was called with correct parameters
-    mock_augment.assert_called_once()
+        assert response.status_code == 200
+        # Verify RAG was called with correct parameters
+        mock_augment.assert_called_once()
 
 def test_chat_endpoint_rate_limiting(client):
     """Test rate limiting functionality"""
