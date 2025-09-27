@@ -204,162 +204,73 @@ jobs:
         python -m pytest tests/ -v --tb=short
         echo "✅ Python tests completed"
 
-  # ---------- DEPLOY TO VPS ----------
-  deploy:
-    needs: [build-and-test, python-tests]
+  # ---------- DEPLOY FRONTEND TO VERCEL ----------
+  deploy-frontend:
+    needs: [build-and-test]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.force_deploy)
     
     environment:
-      name: production
-      url: https://apiportfolio.mysticdatanode.net
+      name: production-frontend
+      url: https://myportfolio.mysticdatanode.net
     
     steps:
     - name: Checkout
       uses: actions/checkout@v4
       
-    - name: Download build artifacts
-      uses: actions/download-artifact@v4
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
       with:
-        name: web-build-${{ github.sha }}
-        path: ./build-artifacts/
-        
-    - name: Verify build artifacts
-      run: |
-        echo "🔍 Verifying downloaded artifacts..."
-        ls -la ./build-artifacts/
-        echo "📂 Checking standalone structure..."
-        ls -la ./build-artifacts/apps/web/ || echo "No apps/web directory found"
-        test -f "./build-artifacts/apps/web/server.js" || (echo "❌ server.js missing from artifacts" && exit 1)
-        echo "✅ Build artifacts verified"
+        node-version: '20'
+        cache: 'npm'
         
     - name: Validate required secrets
       run: |
-        echo "🔒 Validating deployment secrets..."
+        echo "� Validating Vercel deployment secrets..."
         M=0
-        [ -n "${{ secrets.SSH_PRIVATE_KEY }}" ] || { echo "❌ Missing SSH_PRIVATE_KEY"; M=1; }
-        [ -n "${{ secrets.VPS_HOST }}" ]       || { echo "❌ Missing VPS_HOST"; M=1; }
-        [ "$M" -eq 0 ] || { echo "❌ Missing required secrets - deployment aborted"; exit 1; }
-        echo "✅ All required secrets are present"
+        [ -n "${{ secrets.VERCEL_TOKEN }}" ]    || { echo "❌ Missing VERCEL_TOKEN"; M=1; }
+        [ -n "${{ secrets.VERCEL_ORG_ID }}" ]   || { echo "❌ Missing VERCEL_ORG_ID"; M=1; }
+        [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ] || { echo "❌ Missing VERCEL_PROJECT_ID"; M=1; }
+        [ "$M" -eq 0 ] || { echo "❌ Missing required Vercel secrets - deployment aborted"; exit 1; }
+        echo "✅ All required Vercel secrets are present"
 
-    - name: Setup SSH Key
-      run: |
-        mkdir -p ~/.ssh
-        echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-        chmod 600 ~/.ssh/id_rsa
-        ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
-        
-        # Validate SSH key format
-        ssh-keygen -l -f ~/.ssh/id_rsa > /dev/null || (echo "❌ Invalid SSH private key format" && exit 1)
-        echo "✅ SSH key validation passed"
+    - name: Install dependencies
+      run: npm ci --include-workspace-root --workspaces
 
-    - name: Deploy to VPS
+    - name: Build for Vercel
       run: |
-        echo "🚀 Deploying to VPS..."
-        
-        # Create deployment package
-        tar -czf deployment-${{ github.sha }}.tar.gz -C ./build-artifacts .
-        
-        # Upload deployment package
-        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          deployment-${{ github.sha }}.tar.gz \
-          apiportfolio@${{ secrets.VPS_HOST }}:/tmp/
-          
-        # Deploy on VPS using existing deploy script
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
-          set -euo pipefail
-          
-          echo '🚀 Starting VPS deployment...'
-          
-          # Create deployment directory structure if it doesn't exist
-          echo '📁 Setting up deployment directories...'
-          mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app
-          mkdir -p /var/backups/portfolio
-          
-          # Navigate to app directory
-          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app
-          
-          # Validate environment variables for production
-          echo '🔍 Validating production environment...'
-          if [ ! -f '.env.local' ]; then
-            echo '⚠️ Warning: .env.local not found - some features may not work'
-          fi
-          
-          # Ensure production config exists or create basic one
-          if [ ! -f '.env.production' ]; then
-            echo '📝 Creating basic .env.production file...'
-            echo 'NODE_ENV=production' > .env.production
-            echo 'NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api' >> .env.production
-            echo 'NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net' >> .env.production
-            echo 'PORT=3000' >> .env.production
-            echo 'HOSTNAME=localhost' >> .env.production
-            echo '✅ Basic production environment created'
-          else
-            echo '✅ Environment configuration validated'
-          fi
-          
-          # Create backup
-          if [ -d '.next' ]; then
-            echo '💾 Creating backup...'
-            tar -czf /var/backups/portfolio/backup-\$(date +%Y%m%d-%H%M%S).tar.gz .next public 2>/dev/null || true
-          fi
-          
-          # Extract new build
-          echo '📂 Extracting new build...'
-          tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
-          rm /tmp/deployment-${{ github.sha }}.tar.gz
-          
-          # Ensure logs directory exists for PM2
-          mkdir -p logs
-          
-          # Navigate to the correct directory for Next.js standalone app
-          cd apps/web
-          
-          # Verify extraction
-          test -f 'server.js' || { echo '❌ server.js missing after extraction'; exit 1; }
-          
-          # Set environment variables
-          export NODE_ENV=production
-          export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
-          export NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net
-          export PORT=3000
-          export HOSTNAME=localhost
-          
-          # Restart the application using PM2
-          echo '🔄 Restarting application...'
-          pm2 restart portfolio-web || pm2 start server.js --name portfolio-web
-          
-          # Wait for startup
-          sleep 5
-          
-          # Health check
-          if pm2 describe portfolio-web | grep -q 'online'; then
-            echo '✅ Application is running successfully!'
-          else
-            echo '❌ Application failed to start!'
-            pm2 logs portfolio-web --lines 20
-            exit 1
-          fi
-          
-          echo '🎉 Deployment completed successfully!'
-        "
+        echo "🏗️ Building Next.js app for Vercel deployment..."
+        # Set environment variables for build
+        export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
+        export NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
+        npm run build --filter=@portfolio/web --include-dependencies
+        echo "✅ Build completed for Vercel"
 
-    - name: Verify deployment
+    - name: Deploy to Vercel
+      uses: amondnet/vercel-action@v25
+      with:
+        vercel-token: ${{ secrets.VERCEL_TOKEN }}
+        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+        working-directory: ./apps/web
+        vercel-args: '--prod --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net'
+
+    - name: Verify Vercel deployment
       run: |
-        echo "⏱️ Waiting for application to start..."
-        sleep 10
+        echo "⏱️ Waiting for Vercel deployment to propagate..."
+        sleep 30
         
-        echo "🧪 Testing deployment..."
-        curl -f -s -o /dev/null https://apiportfolio.mysticdatanode.net && echo "✅ Website is accessible!" || echo "❌ Website check failed"
+        echo "🧪 Testing Vercel deployment..."
+        curl -f -s -o /dev/null https://myportfolio.mysticdatanode.net && echo "✅ Frontend is accessible on Vercel!" || echo "❌ Frontend check failed"
         
-        echo "🎉 Deployment verification completed!"
+        echo "🎉 Vercel deployment verification completed!"
 
   # ---------- PYTHON SERVICE DEPLOYMENT ----------
   deploy-python:
     if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [python-tests, deploy]
+    needs: [python-tests]
     runs-on: ubuntu-latest
     
     steps:
@@ -451,7 +362,7 @@ jobs:
 
   # ---------- FINAL VALIDATION ----------
   final-validation:
-    needs: [deploy, deploy-python]
+    needs: [deploy-frontend, deploy-python]
     runs-on: ubuntu-latest
     if: always()
     
@@ -459,19 +370,19 @@ jobs:
     - name: Final deployment validation
       run: |
         echo "🔍 Final deployment validation..."
-        echo "✅ Web application deployed to: https://apiportfolio.mysticdatanode.net"
-        echo "✅ Python service deployed to: /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service"
+        echo "✅ Frontend deployed to Vercel: https://myportfolio.mysticdatanode.net"
+        echo "✅ Backend API deployed to VPS: https://apiportfolio.mysticdatanode.net/api"
         echo "✅ CI/CD pipeline completed successfully!"
         echo ""
         echo "📋 Deployment Summary:"
-        echo "  • Frontend: Next.js standalone build with PM2"
-        echo "  • Backend: FastAPI Python service with virtual environment"
-        echo "  • Security: SSH key validation, secrets verification"
-        echo "  • Monitoring: PM2 health checks, deployment verification"
+        echo "  • Frontend: Next.js on Vercel (serverless)"
+        echo "  • Backend: FastAPI Python service on VPS with virtual environment"
+        echo "  • Security: Vercel tokens validation, SSH key validation"
+        echo "  • Monitoring: Vercel deployment checks, PM2 health checks"
         echo ""
         echo "🔗 Access URLs:"
-        echo "  • Website: https://apiportfolio.mysticdatanode.net"
-        echo "  • Python API: http://apiportfolio.mysticdatanode.net:8000 (if configured)"
+        echo "  • Frontend Website: https://myportfolio.mysticdatanode.net"
+        echo "  • Backend API: https://apiportfolio.mysticdatanode.net/api"
 
   # ---------- CLEANUP ----------
   cleanup:
