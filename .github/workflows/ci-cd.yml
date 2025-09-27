@@ -63,12 +63,17 @@ jobs:
       run: npm run test
 
     - name: Build web application
-      run: npm run build --filter=@portfolio/web --include-dependencies
+      run: |
+        echo "🏗️ Building web application with Turbo..."
+        npm run build --filter=@portfolio/web --include-dependencies
+        echo "📂 Checking build output structure..."
+        ls -la apps/web/.next/ || echo "No .next directory found"
+        ls -la apps/web/.next/standalone/ || echo "No standalone directory found"
       
     - name: Verify build output
       run: |
         echo "🔍 Verifying build output..."
-        test -f "apps/web/.next/standalone/server.js" || (echo "❌ server.js missing in standalone build" && exit 1)
+        test -f "apps/web/.next/standalone/apps/web/server.js" || (echo "❌ server.js missing in standalone build" && exit 1)
         test -d "apps/web/.next/static" || (echo "❌ static files missing" && exit 1)
         test -d "apps/web/public" || (echo "❌ public files missing" && exit 1)
         echo "✅ Build verification passed"
@@ -88,7 +93,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     
-    if: contains(github.event.head_commit.modified, 'apps/service-python/') || github.event_name == 'workflow_dispatch'
+    # Run Python tests on main branch pushes or when Python files change
+    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, 'python') || github.event_name == 'workflow_dispatch'
     
     steps:
     - name: Checkout
@@ -160,7 +166,7 @@ jobs:
       run: |
         echo "🔍 Verifying downloaded artifacts..."
         ls -la ./build-artifacts/
-        test -f "./build-artifacts/server.js" || (echo "❌ server.js missing from artifacts" && exit 1)
+        test -f "./build-artifacts/apps/web/server.js" || (echo "❌ server.js missing from artifacts" && exit 1)
         echo "✅ Build artifacts verified"
 
     - name: Setup SSH Key
@@ -201,6 +207,9 @@ jobs:
           echo '📂 Extracting new build...'
           tar -xzf /tmp/deployment-${{ github.sha }}.tar.gz
           rm /tmp/deployment-${{ github.sha }}.tar.gz
+          
+          # Navigate to the correct directory for Next.js standalone app
+          cd apps/web
           
           # Verify extraction
           test -f 'server.js' || { echo '❌ server.js missing after extraction'; exit 1; }
