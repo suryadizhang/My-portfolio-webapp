@@ -1,79 +1,24 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "baseUrl": ".",
-    "plugins": [
-      {
-        "name": "next"
-      }
-    ],
-    "paths": {
-      "@/*": [
-        "./src/*"
-      ],
-      "@portfolio/ui": [
-        "../../packages/ui/src"
-      ],
-      "@portfolio/ui/*": [
-        "../../packages/ui/src/*"
-      ],
-      "@portfolio/utils": [
-        "../../packages/utils/src"
-      ],
-      "@portfolio/utils/*": [
-        "../../packages/utils/src/*"
-      ],
-      "@portfolio/config": [
-        "../../packages/config"
-      ],
-      "@portfolio/config/*": [
-        "../../packages/config/*"
-      ],
-      "@ui": [
-        "../../packages/ui/src"
-      ],
-      "@ui/*": [
-        "../../packages/ui/src/*"
-      ],
-      "@utils": [
-        "../../packages/utils/src"
-      ],
-      "@utils/*": [
-        "../../packages/utils/src/*"
-      ],
-      "@config": [
-        "../../packages/config"
-      ],
-      "@config/*": [
-        "../../packages/config/*"
-      ]
-    },
-    "types": [
-      "jest",
-      "node",
-      "@testing-library/jest-dom"
-    ],
-    "lib": [
-      "dom",
-      "dom.iterable",
-      "esnext"
-    ],
+    "jsx": "preserve",
+    "types": ["node"],
+    "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "noEmit": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "jsx": "preserve"
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
     "next-env.d.ts",
-    "app/**/*.ts",
-    "app/**/*.tsx",
-    "src/**/*.ts",
+    "src/**/*.ts", 
     "src/**/*.tsx",
     ".next/types/**/*.ts"
   ],
-  "exclude": [
-    "node_modules",
-    "src/components/chat-backup/**/*"
-  ]
+  "exclude": ["node_modules"]
 }

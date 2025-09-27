@@ -3,16 +3,26 @@ name: "CI/CD Pipeline"
 on:
   push:
     branches: [main, develop]
-    paths-ignore:
-      - "README.md"
-      - "docs/**"
-      - "*.md"
+    paths:
+      - 'apps/web/**'
+      - 'packages/ui/**'
+      - 'packages/utils/**'
+      - 'packages/config/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
-    paths-ignore:
-      - "README.md" 
-      - "docs/**"
-      - "*.md"
+    paths:
+      - 'apps/web/**'
+      - 'packages/ui/**'
+      - 'packages/utils/**'
+      - 'packages/config/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - 'Dockerfile'
+      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -163,10 +173,10 @@ jobs:
       - name: Verify standalone output
         if: github.event_name != 'pull_request'
         run: |
-          # Verify server.js exists in container
+          # Verify server.js exists in container at /app/server.js
           echo "🔍 Verifying standalone output structure..."
           docker run --rm --entrypoint="" ${{ steps.meta.outputs.tags }} \
-            sh -c "test -f /app/apps/web/server.js || (echo '❌ Standalone server.js missing' && ls -la /app/apps/web/ && exit 1)"
+            sh -c "test -f /app/server.js || (echo '❌ Standalone server.js missing at /app/server.js' && ls -la /app/ && exit 1)"
           
           # Quick smoke test - start container and verify it runs
           echo "🧪 Running container smoke test..."
@@ -361,83 +371,92 @@ jobs:
           chmod 600 ~/.ssh/id_rsa
           ssh-keyscan -H ${{ secrets.WEB_VPS_HOST }} >> ~/.ssh/known_hosts
 
+      - name: Extract application bundle
+        run: |
+          echo "� Extracting application bundle from Docker image..."
+          
+          # Create container and extract /app
+          CID=$(docker create "${{ needs.web-ci.outputs.image }}")
+          mkdir -p extracted
+          docker cp "$CID:/app" extracted/
+          docker rm "$CID"
+          
+          # Verify server.js exists
+          test -f extracted/app/server.js || { echo "❌ /app/server.js missing"; exit 1; }
+          
+          # Package for deployment
+          cd extracted/app
+          tar -czf ../../deployment.tar.gz .
+          echo "✅ Application bundle created: deployment.tar.gz"
+
       - name: Deploy web application
         id: deploy
         run: |
           echo "🚀 Deploying web app to production..."
           
+          # Upload bundle to server
+          scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no deployment.tar.gz \
+            apiportfolio@${{ secrets.WEB_VPS_HOST }}:/tmp/deployment-${GITHUB_SHA}.tar.gz
+          
           ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.WEB_VPS_HOST }} "
             set -euo pipefail
             
-            # Login to registry
-            echo '${{ secrets.GITHUB_TOKEN }}' | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            
-            # Pull new image
-            NEW_IMAGE='${{ needs.web-ci.outputs.image }}'
-            echo '📥 Pulling new image: \$NEW_IMAGE'
-            docker pull \$NEW_IMAGE
-            
-            # Zero-downtime deployment strategy
+            # Zero-downtime deployment
             echo '🔄 Performing zero-downtime deployment...'
             
-            # Stop old container gracefully
-            if docker ps | grep -q portfolio-web; then
-              echo '⏹️ Stopping existing container...'
-              docker stop portfolio-web --time=30 || true
-              docker rm portfolio-web || true
+            # Stop existing process
+            if [ -f /tmp/portfolio.pid ]; then
+              OLD_PID=\$(cat /tmp/portfolio.pid)
+              if kill -0 \$OLD_PID 2>/dev/null; then
+                echo '⏹️ Stopping existing process...'
+                kill -TERM \$OLD_PID
+                sleep 5
+                kill -KILL \$OLD_PID 2>/dev/null || true
+              fi
             fi
             
-            # Start new container
-            echo '🎯 Starting new web container...'
-            docker run -d \
-              --name portfolio-web \
-              --restart unless-stopped \
-              -p 3000:3000 \
-              -e NODE_ENV=production \
-              -e NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
-              -e NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net \
-              -e OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}' \
-              -e WEBHOOK_SECRET='${{ secrets.WEBHOOK_SECRET }}' \
-              -e OPENAI_MODEL='${{ vars.OPENAI_MODEL || 'gpt-4o-mini' }}' \
-              -e CHAT_MAX_TOKENS='${{ vars.CHAT_MAX_TOKENS || '300' }}' \
-              -e CHAT_TEMPERATURE='${{ vars.CHAT_TEMPERATURE || '0.4' }}' \
-              -e CHAT_WEBHOOK_ORIGIN='${{ vars.CHAT_WEBHOOK_ORIGIN || '*' }}' \
-              -e CHAT_MAX_HISTORY='${{ vars.CHAT_MAX_HISTORY || '8' }}' \
-              -e CHAT_MAX_INPUT_CHARS='${{ vars.CHAT_MAX_INPUT_CHARS || '800' }}' \
-              -e CHAT_WINDOW_MS='${{ vars.CHAT_WINDOW_MS || '60000' }}' \
-              -e CHAT_MAX_REQS='${{ vars.CHAT_MAX_REQS || '8' }}' \
-              -e NEXT_PUBLIC_CHAT_ENABLED='${{ vars.NEXT_PUBLIC_CHAT_ENABLED || 'false' }}' \
-              -e SMTP_HOST='${{ secrets.SMTP_HOST }}' \
-              -e SMTP_PORT='${{ secrets.SMTP_PORT }}' \
-              -e SMTP_SECURE='${{ secrets.SMTP_SECURE }}' \
-              -e SMTP_USER='${{ secrets.SMTP_USER }}' \
-              -e SMTP_PASS='${{ secrets.SMTP_PASS }}' \
-              -e FROM_EMAIL='${{ secrets.FROM_EMAIL }}' \
-              -e TO_EMAIL='${{ secrets.TO_EMAIL }}' \
-              -e IP_SALT='${{ secrets.IP_SALT }}' \
-              \$NEW_IMAGE
+            # Deploy new version
+            cd /var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs
+            tar -xzf /tmp/deployment-${GITHUB_SHA}.tar.gz
+            
+            # Set environment variables
+            export NODE_ENV=production
+            export PORT=3000
+            export HOSTNAME=localhost
+            export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
+            export NEXT_PUBLIC_SITE_URL=https://apiportfolio.mysticdatanode.net
+            export OPENAI_API_KEY='${{ secrets.OPENAI_API_KEY }}'
+            export WEBHOOK_SECRET='${{ secrets.WEBHOOK_SECRET }}'
+            export SMTP_HOST='${{ secrets.SMTP_HOST }}'
+            export SMTP_PORT='${{ secrets.SMTP_PORT }}'
+            export SMTP_SECURE='${{ secrets.SMTP_SECURE }}'
+            export SMTP_USER='${{ secrets.SMTP_USER }}'
+            export SMTP_PASS='${{ secrets.SMTP_PASS }}'
+            export FROM_EMAIL='${{ secrets.FROM_EMAIL }}'
+            export TO_EMAIL='${{ secrets.TO_EMAIL }}'
+            export IP_SALT='${{ secrets.IP_SALT }}'
+            
+            # Start new process
+            echo '🎯 Starting new web service...'
+            nohup /usr/bin/node server.js > /tmp/portfolio.log 2>&1 & echo \$! > /tmp/portfolio.pid
             
             # Health check
             echo '🔍 Waiting for service to be ready...'
             for i in {1..30}; do
-              if docker exec portfolio-web curl -f -s http://localhost:3000/api/health >/dev/null 2>&1 || \
-                 curl -f -s http://localhost:3000 >/dev/null 2>&1; then
+              if curl -f -s http://localhost:3000 >/dev/null 2>&1; then
                 echo '✅ Web service is healthy'
                 break
               fi
               if [ \$i -eq 30 ]; then
                 echo '❌ Health check failed after 30 attempts'
-                docker logs portfolio-web --tail=50
+                tail -50 /tmp/portfolio.log
                 exit 1
               fi
               sleep 2
             done
             
-            # Cleanup old images (keep last 3)
-            echo '🧹 Cleaning up old images...'
-            docker images '${{ env.REGISTRY }}/${{ env.OWNER }}/portfolio-web' --format 'table {{.Tag}}\t{{.CreatedAt}}' | \
-              tail -n +2 | sort -k2 -r | tail -n +4 | awk '{print \$1}' | \
-              xargs -I {} docker rmi '${{ env.REGISTRY }}/${{ env.OWNER }}/portfolio-web:{}' || true
+            # Cleanup
+            rm -f /tmp/deployment-${GITHUB_SHA}.tar.gz
           "
 
       - name: Set deployment status (success)

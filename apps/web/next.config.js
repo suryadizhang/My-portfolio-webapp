@@ -15,14 +15,27 @@ if (enableAnalyzer) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Transpile workspace packages so Next.js can bundle them
+  output: 'standalone',
+  experimental: { mdxRs: true },
+  pageExtensions: ['ts','tsx','js','jsx','md','mdx'],
+
+  // 👇 Important for monorepos: transpile your workspace pkgs
   transpilePackages: ['@portfolio/ui', '@portfolio/utils', '@portfolio/config'],
-  
-  experimental: {
-    mdxRs: true,
-    externalDir: true, // Allow imports from parent directories
+
+  // Make the alias available in ALL builds (server & client)
+  webpack: (config, { dev }) => {
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': require('path').resolve(__dirname, 'src'),
+    };
+
+    if (!dev) {
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
+    }
+    return config;
   },
-  pageExtensions: ['ts', 'tsx', 'js', 'jsx', 'md', 'mdx'],
+
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
@@ -49,23 +62,6 @@ const nextConfig = {
     'lucide-react': {
       transform: 'lucide-react/dist/esm/icons/{{member}}',
     },
-  },
-  
-  // Bundle optimization
-  webpack: (config, { dev }) => {
-    // Alias works on both server and client
-    config.resolve.alias = {
-      ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, 'src'),
-    }
-
-    // Tree shaking optimizations
-    if (!dev && config.optimization) {
-      config.optimization.usedExports = true
-      config.optimization.sideEffects = false
-    }
-
-    return config
   },
   
   // Security headers
@@ -148,7 +144,6 @@ const nextConfig = {
   },
 
   // Build output optimization
-  output: 'standalone',
   trailingSlash: false,
 }
 

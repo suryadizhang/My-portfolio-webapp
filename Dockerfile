@@ -1,64 +1,43 @@
-# syntax=docker/dockerfile:1.6
-# Pin base image with digest for reproducible builds
-FROM node:20.11.1-alpine@sha256:6e80991f69cc7722c561e5d14d5e72ab47c0d6b6cfb3ae50fb9cf9a7b30fdf97 AS base
+# --- deps ---
+FROM node:20-alpine AS deps
 WORKDIR /repo
 
-# Copy package manifests for workspace dependency resolution
+# Copy only the manifests so CI cache works well
 COPY package.json package-lock.json ./
 COPY apps/web/package.json apps/web/package.json
 COPY packages/ui/package.json packages/ui/package.json
 COPY packages/utils/package.json packages/utils/package.json
 COPY packages/config/package.json packages/config/package.json
 
-# Copy workspace sources BEFORE install to satisfy file: links
-COPY packages/ui packages/ui
-COPY packages/utils packages/utils
-COPY packages/config packages/config
+# Install workspace deps (keep devDeps, we need them for build)
+RUN npm ci
 
-# Install dependencies reproducibly for the whole workspace
-# Skip all lifecycle scripts (including prepare/husky) during CI builds
-RUN npm ci --include-workspace-root --workspaces --ignore-scripts
+# --- builder ---
+FROM node:20-alpine AS builder
+WORKDIR /repo
 
-# ---------- Build ----------
-FROM base AS build
-
-# Copy the rest (web app source, tsconfigs, etc.)
+# node_modules from deps + full source
+COPY --from=deps /repo/node_modules ./node_modules
 COPY . .
 
-# Fail early if critical config files are missing
-RUN test -f tsconfig.base.json || (echo "❌ tsconfig.base.json missing" && exit 1)
-RUN test -f apps/web/next.config.js || (echo "❌ next.config.js missing" && exit 1)
-
-# Build workspace packages first (if they emit dist/)
-RUN npm run build --workspace=@portfolio/utils --if-present || true
-RUN npm run build --workspace=@portfolio/ui --if-present || true
-RUN npm run build --workspace=@portfolio/config --if-present || true
-
-# Build Next.js app with standalone output
+# Build the web app (Next 15 with output: 'standalone')
 WORKDIR /repo/apps/web
+ENV NODE_ENV=production
 RUN npm run build
 
-# Verify standalone output was created in monorepo layout
-RUN test -f .next/standalone/apps/web/server.js || (echo "❌ Standalone server not found" && ls -la .next/standalone/ && exit 1)
-
-# ---------- Runtime ----------
-FROM node:20.11.1-alpine@sha256:6e80991f69cc7722c561e5d14d5e72ab47c0d6b6cfb3ae50fb9cf9a7b30fdf97 AS runner
+# --- runner (final artifact layout for extraction or direct run) ---
+FROM node:20-alpine AS runner
 WORKDIR /app
 
+# Copy the standalone output to /app, so server.js is at /app/server.js
+COPY --from=builder /repo/apps/web/.next/standalone/apps/web ./
+# Copy the rest of the monorepo standalone structure needed
+COPY --from=builder /repo/apps/web/.next/standalone/node_modules ./node_modules
+COPY --from=builder /repo/apps/web/.next/standalone/packages ./packages
+# Static files + public assets  
+COPY --from=builder /repo/apps/web/.next/static ./.next/static
+COPY --from=builder /repo/apps/web/public ./public
+
 ENV NODE_ENV=production
-ENV PORT=3000
-ENV HOSTNAME=0.0.0.0
-
-# Copy monorepo standalone layout
-COPY --from=build /repo/apps/web/.next/standalone ./
-COPY --from=build /repo/apps/web/.next/static ./apps/web/.next/static
-COPY --from=build /repo/apps/web/public ./apps/web/public
-
-# Verify server.js is in the correct monorepo path
-RUN test -f ./apps/web/server.js || (echo "❌ server.js not found at ./apps/web/server.js" && find . -name "server.js" && exit 1)
-
-# Final verification and startup
 EXPOSE 3000
-
-# Updated 2025-09-26: Ensure CMD is properly set for portfolio-web container
-CMD ["node", "apps/web/server.js"]
+CMD ["node", "server.js"]
