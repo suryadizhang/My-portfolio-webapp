@@ -99,6 +99,9 @@ jobs:
         # Copy public files to the correct nested location  
         cp -r apps/web/public ./build-artifacts/apps/web/
         
+        # Copy package-lock.json for npm ci (required for clean install)
+        cp package-lock.json ./build-artifacts/ 2>/dev/null || echo "⚠️ package-lock.json not found, will use npm install as fallback"
+        
     - name: Install dependencies in build-artifacts
       run: |
         echo "📦 Installing dependencies in build-artifacts..."
@@ -107,9 +110,15 @@ jobs:
         # Check if package.json exists
         test -f "package.json" || (echo "❌ package.json missing in build-artifacts" && exit 1)
         
-        # Install production dependencies only (faster and smaller)
+        # Install production dependencies - prefer npm ci if lock file exists, fallback to npm install
         echo "📋 Installing production dependencies..."
-        npm ci --production --prefer-offline --no-audit
+        if [ -f "package-lock.json" ]; then
+          echo "🔒 Using npm ci (clean install with lock file)..."
+          npm ci --production --prefer-offline --no-audit
+        else
+          echo "📦 Using npm install (fallback - no lock file found)..."
+          npm install --omit=dev --prefer-offline --no-audit
+        fi
         
         # Verify Next.js binary was installed
         test -f "node_modules/next/dist/bin/next" && echo "✅ Next.js binary confirmed" || echo "⚠️ Next.js binary not found"
