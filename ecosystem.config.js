@@ -1,9 +1,9 @@
 module.exports = {
   apps: [{
     name: 'portfolio-web',
-    script: 'node_modules/next/dist/bin/next',
-    args: 'start',
-    cwd: '/var/www/vhosts/apiportfolio.mysticdatanode.net/httpdocs',
+    // For standalone builds, run the server.js directly
+    script: 'apps/web/server.js',
+    cwd: '/var/www/vhosts/apiportfolio.mysticdatanode.net/portfolio-app',
     instances: 1,
     autorestart: true,
     watch: false,
@@ -21,8 +21,8 @@ module.exports = {
     merge_logs: true,
     log_date_format: 'YYYY-MM-DD HH:mm:ss Z',
     
-    // Health check
-    health_check_url: 'http://localhost:3000/api/health',
+    // Health check - check root instead of non-existent /api/health
+    health_check_url: 'http://localhost:3000/',
     health_check_grace_period: 3000,
     health_check_fatal_exceptions: true,
     // Restart policy
