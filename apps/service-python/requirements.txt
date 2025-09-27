@@ -1,8 +1,8 @@
-fastapi==0.104.1
-starlette>=0.27.0,<0.28.0
-uvicorn[standard]==0.24.0
-httpx==0.25.2
-pydantic==2.5.0
+fastapi>=0.104.1
+starlette>=0.27.0
+uvicorn[standard]>=0.24.0
+httpx>=0.25.2
+pydantic>=2.5.0
 numpy==1.24.3
 python-frontmatter==1.0.0
 markdown==3.5.1

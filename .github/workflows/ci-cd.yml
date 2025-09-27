@@ -166,6 +166,8 @@ jobs:
       run: |
         echo "🔍 Verifying downloaded artifacts..."
         ls -la ./build-artifacts/
+        echo "📂 Checking standalone structure..."
+        ls -la ./build-artifacts/apps/web/ || echo "No apps/web directory found"
         test -f "./build-artifacts/apps/web/server.js" || (echo "❌ server.js missing from artifacts" && exit 1)
         echo "✅ Build artifacts verified"
 
