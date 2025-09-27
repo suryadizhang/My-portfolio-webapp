@@ -99,6 +99,25 @@ jobs:
         # Copy public files to the correct nested location  
         cp -r apps/web/public ./build-artifacts/apps/web/
         
+    - name: Install dependencies in build-artifacts
+      run: |
+        echo "📦 Installing dependencies in build-artifacts..."
+        cd ./build-artifacts
+        
+        # Check if package.json exists
+        test -f "package.json" || (echo "❌ package.json missing in build-artifacts" && exit 1)
+        
+        # Install production dependencies only (faster and smaller)
+        echo "📋 Installing production dependencies..."
+        npm ci --production --prefer-offline --no-audit
+        
+        # Verify Next.js binary was installed
+        test -f "node_modules/next/dist/bin/next" && echo "✅ Next.js binary confirmed" || echo "⚠️ Next.js binary not found"
+        
+        echo "✅ Dependencies installed successfully"
+        
+    - name: Verify build artifacts
+      run: |
         # Verify the structure is correct
         echo "🔍 Verifying artifact structure..."
         ls -la ./build-artifacts/
@@ -110,10 +129,12 @@ jobs:
         test -d "./build-artifacts/apps/web/.next/static" || (echo "❌ static files missing" && exit 1)
         test -d "./build-artifacts/apps/web/public" || (echo "❌ public files missing" && exit 1)
         test -f "./build-artifacts/node_modules/next/dist/bin/next" || (echo "❌ Next.js binary missing" && exit 1)
+        test -d "./build-artifacts/node_modules" || (echo "❌ node_modules directory missing" && exit 1)
         
         echo "📊 Artifact size information:"
         du -sh ./build-artifacts/
-        echo "✅ Build artifacts prepared successfully"
+        du -sh ./build-artifacts/node_modules/ || echo "node_modules size check skipped"
+        echo "✅ Build artifacts verification completed successfully"
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v4
