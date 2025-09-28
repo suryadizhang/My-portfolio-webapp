@@ -201,23 +201,26 @@ jobs:
         }
         TSCONFIG_EOF
         
-        # Copy built packages to make them available as node_modules
-        echo "Setting up monorepo dependencies for Vercel..."
+        # Create a simplified deployment package without monorepo dependencies
+        echo "Setting up simplified deployment for Vercel..."
         
-        # Create node_modules directory structure for local packages
-        mkdir -p node_modules/@portfolio
+        # Copy UI components directly into src
+        echo "Inlining UI components..."
+        mkdir -p src/ui
+        cp -r ../../packages/ui/src/* src/ui/ || true
         
-        # Copy built packages
-        echo "Copying built packages..."
-        cp -r ../../packages/ui node_modules/@portfolio/ui
-        cp -r ../../packages/utils node_modules/@portfolio/utils
-        cp -r ../../packages/config node_modules/@portfolio/config
+        # Copy utils directly into src  
+        echo "Inlining utils..."
+        mkdir -p src/utils-lib
+        cp -r ../../packages/utils/src/* src/utils-lib/ || true
         
-        # Ensure all package dependencies are available
-        cd node_modules/@portfolio/ui && npm install --omit=dev || true
-        cd ../utils && npm install --omit=dev || true
-        cd ../config && npm install --omit=dev || true
-        cd ../../../
+        # Update imports to use local paths instead of @portfolio packages
+        echo "Updating import paths..."
+        find . -name "*.tsx" -o -name "*.ts" | grep -v node_modules | xargs sed -i 's|@portfolio/ui|../ui|g' || true
+        find . -name "*.tsx" -o -name "*.ts" | grep -v node_modules | xargs sed -i 's|@portfolio/utils|../utils-lib|g' || true
+        
+        # Install only the direct dependencies we need
+        npm install lucide-react class-variance-authority clsx tailwind-merge
         
         # Create vercel.json for deployment
         cat > vercel.json << 'VERCEL_EOF'
