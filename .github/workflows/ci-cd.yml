@@ -250,6 +250,10 @@ jobs:
 
     - name: Deploy to Vercel
       uses: amondnet/vercel-action@v25
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       with:
         vercel-token: ${{ secrets.VERCEL_TOKEN }}
         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
@@ -276,6 +280,14 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
+      
+    - name: Setup Node.js for PM2
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        
+    - name: Install PM2 globally
+      run: npm install -g pm2
       
     - name: Setup SSH Key for Python deployment
       run: |
@@ -330,6 +342,13 @@ jobs:
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
+          
+          # Install or update PM2 on VPS if needed
+          echo '📦 Ensuring PM2 is available...'
+          command -v pm2 >/dev/null 2>&1 || {
+            echo '🔧 Installing PM2...'
+            npm install -g pm2
+          }
           
           # Restart Python service using PM2
           echo '🔄 Restarting Python service...'
