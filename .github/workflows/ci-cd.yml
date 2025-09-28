@@ -93,11 +93,19 @@ jobs:
     - name: Validate required secrets
       run: |
         echo "Validating Vercel secrets..."
-        if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
-          echo "Missing required Vercel secrets"
+        echo "VERCEL_TOKEN length: ${#VERCEL_TOKEN}"
+        echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"
+        echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
+        if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "❌ Missing required Vercel secrets. Please check repository settings."
+          echo "Required secrets: VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID"
           exit 1
         fi
-        echo "All Vercel secrets present"
+        echo "✅ All Vercel secrets present"
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
 
     - name: Install dependencies
       run: npm ci --include-workspace-root --workspaces
@@ -120,17 +128,17 @@ jobs:
         
         npm install -g vercel@latest
         
-        echo "Linking project..."
-        vercel link --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+        echo "Setting up Vercel project..."
+        # Create .vercel directory with project settings
+        mkdir -p .vercel
+        echo '{"projectId":"'"$VERCEL_PROJECT_ID"'","orgId":"'"$VERCEL_ORG_ID"'"}' > .vercel/project.json
         
-        echo "Deploying..."
+        echo "Deploying to Vercel..."
         vercel --prod \
           --token "$VERCEL_TOKEN" \
-          --scope "$VERCEL_ORG_ID" \
           --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
           --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
-          --confirm \
-          --force
+          --yes
         
         echo "Vercel deployment completed!"
 
@@ -172,10 +180,9 @@ jobs:
           
           echo "Starting Python deployment..."
           
-          sudo mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
-          sudo chown -R apiportfolio:apiportfolio /var/www/vhosts/apiportfolio.mysticdatanode.net/
-          
-          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
+          # Create directory in user home if /var/www not accessible
+          mkdir -p ~/python-service
+          cd ~/python-service
           
           tar -xzf /tmp/python-service.tar.gz
           rm /tmp/python-service.tar.gz
@@ -192,11 +199,10 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           
-          # Check if PM2 is available, install if needed
+          # Check if PM2 is available, install if needed (user-level)
           if ! command -v pm2 &> /dev/null; then
-            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
-            sudo apt-get install -y nodejs
-            sudo npm install -g pm2
+            # Install PM2 using existing Node.js (already installed in GitHub Actions)
+            npm install -g pm2
           fi
           
           pm2 restart portfolio-python || pm2 start app/main.py --name portfolio-python --interpreter python3
