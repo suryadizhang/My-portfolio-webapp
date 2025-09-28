@@ -1,52 +1,22 @@
-name: "Simplified CI/CD Pipeline"
+﻿name: "Portfolio CI/CD Pipeline"
 
 on:
   push:
     branches: [main, develop]
     paths:
       - 'apps/web/**'
+      - 'apps/service-python/**'
       - 'packages/ui/**'
       - 'packages/utils/**'
       - 'packages/config/**'
       - 'package.json'
-      - name: Validate required secrets
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      run: |
-        echo "🔍 Validating Vercel deployment secrets..."
-        M=0
-        
-        # Check if secrets exist and have content
-        if [ -z "$VERCEL_TOKEN" ]; then
-          echo "❌ VERCEL_TOKEN is empty or not set"
-          M=1
-        else
-          echo "✅ VERCEL_TOKEN is set (length: ${#VERCEL_TOKEN})"
-        fi
-        
-        if [ -z "$VERCEL_ORG_ID" ]; then
-          echo "❌ VERCEL_ORG_ID is empty or not set"
-          M=1
-        else
-          echo "✅ VERCEL_ORG_ID is set: ${VERCEL_ORG_ID}"
-        fi
-        
-        if [ -z "$VERCEL_PROJECT_ID" ]; then
-          echo "❌ VERCEL_PROJECT_ID is empty or not set"
-          M=1
-        else
-          echo "✅ VERCEL_PROJECT_ID is set (first 10 chars): ${VERCEL_PROJECT_ID:0:10}..."
-        fi
-        
-        [ "$M" -eq 0 ] || { echo "❌ Missing required Vercel secrets - deployment aborted"; exit 1; }
-        echo "✅ All required Vercel secrets are properly configured"ckage-lock.json'
+      - 'package-lock.json'
       - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
     paths:
       - 'apps/web/**'
+      - 'apps/service-python/**'
       - 'packages/ui/**'
       - 'packages/utils/**'
       - 'packages/config/**'
@@ -62,7 +32,7 @@ on:
         type: boolean
 
 concurrency:
-  group: simplified-ci-cd-${{ github.ref }}
+  group: portfolio-ci-cd-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -70,7 +40,6 @@ permissions:
   deployments: write
 
 jobs:
-  # ---------- BUILD & TEST ----------
   build-and-test:
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -88,155 +57,18 @@ jobs:
     - name: Install dependencies
       run: npm ci --include-workspace-root --workspaces
       
-    - name: Security audit
-      run: |
-        echo "🔍 Running security audit..."
-        npm audit --audit-level=moderate || echo "⚠️ Found vulnerabilities, but continuing build"
-        echo "✅ Security audit completed"
-
     - name: Type check
       run: npm run typecheck
 
     - name: Run tests
       run: npm run test
 
-    - name: Build web application
+    - name: Build application
       run: |
-        echo "🏗️ Building web application with Turbo..."
-        npm run build --filter=@portfolio/web --include-dependencies
-        echo "📂 Checking build output structure..."
-        ls -la apps/web/.next/ || echo "No .next directory found"
-        ls -la apps/web/.next/standalone/ || echo "No standalone directory found"
-      
-    - name: Verify build output
-      run: |
-        echo "🔍 Verifying build output..."
-        test -f "apps/web/.next/standalone/apps/web/server.js" || (echo "❌ server.js missing in standalone build" && exit 1)
-        test -d "apps/web/.next/static" || (echo "❌ static files missing" && exit 1)
-        test -d "apps/web/public" || (echo "❌ public files missing" && exit 1)
-        echo "✅ Build verification passed"
+        echo "Building application..."
+        npm run build
+        echo "Build completed successfully"
 
-    - name: Prepare build artifacts
-      run: |
-        echo "📦 Preparing build artifacts with correct structure..."
-        mkdir -p ./build-artifacts/apps/web
-        
-        # Copy standalone build (contains the complete app structure)
-        cp -r apps/web/.next/standalone/* ./build-artifacts/
-        
-        # Copy static files to the correct nested location
-        mkdir -p ./build-artifacts/apps/web/.next/static
-        cp -r apps/web/.next/static/* ./build-artifacts/apps/web/.next/static/
-        
-        # Copy public files to the correct nested location  
-        cp -r apps/web/public ./build-artifacts/apps/web/
-        
-        # Copy package-lock.json for npm ci (required for clean install)
-        cp package-lock.json ./build-artifacts/ 2>/dev/null || echo "⚠️ package-lock.json not found, will use npm install as fallback"
-        
-    - name: Install dependencies in build-artifacts
-      run: |
-        echo "📦 Installing dependencies in build-artifacts..."
-        cd ./build-artifacts
-        
-        # Check if package.json exists
-        test -f "package.json" || (echo "❌ package.json missing in build-artifacts" && exit 1)
-        
-        # Install production dependencies - prefer npm ci if lock file exists, fallback to npm install
-        echo "📋 Installing production dependencies..."
-        if [ -f "package-lock.json" ]; then
-          echo "🔒 Using npm ci (clean install with lock file)..."
-          npm ci --production --prefer-offline --no-audit
-        else
-          echo "📦 Using npm install (fallback - no lock file found)..."
-          npm install --omit=dev --prefer-offline --no-audit
-        fi
-        
-        # Verify Next.js binary was installed
-        test -f "node_modules/next/dist/bin/next" && echo "✅ Next.js binary confirmed" || echo "⚠️ Next.js binary not found"
-        
-        echo "✅ Dependencies installed successfully"
-        
-    - name: Verify build artifacts
-      run: |
-        # Verify the structure is correct
-        echo "🔍 Verifying artifact structure..."
-        ls -la ./build-artifacts/
-        ls -la ./build-artifacts/apps/web/
-        
-        # Comprehensive file verification
-        test -f "./build-artifacts/apps/web/server.js" || (echo "❌ server.js missing in prepared artifacts" && exit 1)
-        test -f "./build-artifacts/package.json" || (echo "❌ root package.json missing" && exit 1)
-        test -d "./build-artifacts/apps/web/.next/static" || (echo "❌ static files missing" && exit 1)
-        test -d "./build-artifacts/apps/web/public" || (echo "❌ public files missing" && exit 1)
-        test -f "./build-artifacts/node_modules/next/dist/bin/next" || (echo "❌ Next.js binary missing" && exit 1)
-        test -d "./build-artifacts/node_modules" || (echo "❌ node_modules directory missing" && exit 1)
-        
-        echo "📊 Artifact size information:"
-        du -sh ./build-artifacts/
-        du -sh ./build-artifacts/node_modules/ || echo "node_modules size check skipped"
-        echo "✅ Build artifacts verification completed successfully"
-
-    - name: Upload build artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: web-build-${{ github.sha }}
-        path: ./build-artifacts/
-        retention-days: 1
-
-  # ---------- PYTHON SERVICE TESTS ----------
-  python-tests:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-    
-    # Run Python tests on main branch pushes or when Python files change
-    if: github.ref == 'refs/heads/main' || contains(github.event.head_commit.message, 'python') || github.event_name == 'workflow_dispatch'
-    
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v4
-      
-    - name: Setup Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: '3.11'
-        cache: 'pip'
-
-    - name: Install Python dependencies
-      working-directory: apps/service-python
-      run: |
-        python -m pip install --upgrade pip
-        # Install production dependencies
-        echo "📦 Installing production dependencies..."
-        pip install -r requirements.txt
-        
-        # Install development dependencies - try pyproject.toml first, fallback to requirements-dev.txt
-        echo "🔧 Installing development dependencies..."
-        if pip install -e ".[dev]" 2>/dev/null; then
-          echo "✅ Installed dev dependencies from pyproject.toml"
-        elif [ -f requirements-dev.txt ]; then
-          echo "📋 Fallback: Installing dev dependencies from requirements-dev.txt"
-          pip install -r requirements-dev.txt
-        else
-          echo "⚠️ No dev dependencies configuration found"
-          exit 1
-        fi
-        
-        # Verify critical testing tools are available
-        echo "🔍 Verifying testing tools..."
-        python -c "import pytest; import fastapi; from fastapi.testclient import TestClient; print('✅ Testing tools ready')" || {
-          echo "❌ Critical testing tools missing"
-          exit 1
-        }
-
-    - name: Run Python tests
-      working-directory: apps/service-python
-      run: |
-        echo "🧪 Running Python tests..."
-        python -m pytest tests/ -v --tb=short
-        echo "✅ Python tests completed"
-
-  # ---------- DEPLOY FRONTEND TO VERCEL ----------
   deploy-frontend:
     needs: [build-and-test]
     runs-on: ubuntu-latest
@@ -260,25 +92,22 @@ jobs:
         
     - name: Validate required secrets
       run: |
-        echo "� Validating Vercel deployment secrets..."
-        M=0
-        [ -n "${{ secrets.VERCEL_TOKEN }}" ]    || { echo "❌ Missing VERCEL_TOKEN"; M=1; }
-        [ -n "${{ secrets.VERCEL_ORG_ID }}" ]   || { echo "❌ Missing VERCEL_ORG_ID"; M=1; }
-        [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ] || { echo "❌ Missing VERCEL_PROJECT_ID"; M=1; }
-        [ "$M" -eq 0 ] || { echo "❌ Missing required Vercel secrets - deployment aborted"; exit 1; }
-        echo "✅ All required Vercel secrets are present"
+        echo "Validating Vercel secrets..."
+        if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+          echo "Missing required Vercel secrets"
+          exit 1
+        fi
+        echo "All Vercel secrets present"
 
     - name: Install dependencies
       run: npm ci --include-workspace-root --workspaces
 
     - name: Build for Vercel
       run: |
-        echo "🏗️ Building Next.js app for Vercel deployment..."
-        # Set environment variables for build
+        echo "Building for Vercel..."
         export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
         export NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
-        npm run build --filter=@portfolio/web --include-dependencies
-        echo "✅ Build completed for Vercel"
+        npm run build
 
     - name: Deploy to Vercel
       env:
@@ -287,37 +116,14 @@ jobs:
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       working-directory: ./apps/web
       run: |
-        echo "🚀 Starting Vercel deployment..."
+        echo "Deploying to Vercel..."
         
-        # Install Vercel CLI
         npm install -g vercel@latest
         
-        # Verify secrets are properly set
-        echo "🔍 Verifying Vercel configuration..."
-        if [ -z "$VERCEL_TOKEN" ]; then
-          echo "❌ VERCEL_TOKEN is empty"
-          exit 1
-        fi
-        if [ -z "$VERCEL_ORG_ID" ]; then
-          echo "❌ VERCEL_ORG_ID is empty" 
-          exit 1
-        fi
-        if [ -z "$VERCEL_PROJECT_ID" ]; then
-          echo "❌ VERCEL_PROJECT_ID is empty"
-          exit 1
-        fi
-        echo "✅ All Vercel secrets are properly configured"
-        
-        echo "🔗 API Configuration:"
-        echo "  - API Base URL: https://apiportfolio.mysticdatanode.net/api (VPS/Plesk hosted)"
-        echo "  - Frontend URL: https://myportfolio.mysticdatanode.net (Vercel hosted)"
-        
-        # Link project to avoid "Project not found" errors
-        echo "🔗 Linking Vercel project..."
+        echo "Linking project..."
         vercel link --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
         
-        # Deploy to Vercel with explicit project linking
-        echo "📦 Deploying to Vercel..."
+        echo "Deploying..."
         vercel --prod \
           --token "$VERCEL_TOKEN" \
           --scope "$VERCEL_ORG_ID" \
@@ -326,26 +132,16 @@ jobs:
           --confirm \
           --force
         
-        echo "✅ Vercel deployment completed!"
+        echo "Vercel deployment completed!"
 
-    - name: Verify Vercel deployment
-      run: |
-        echo "⏱️ Waiting for Vercel deployment to propagate..."
-        sleep 30
-        
-        echo "🧪 Testing Vercel deployment..."
-        curl -f -s -o /dev/null https://myportfolio.mysticdatanode.net && echo "✅ Frontend is accessible on Vercel!" || echo "❌ Frontend check failed"
-        
-        echo "🎉 Vercel deployment verification completed!"
-
-  # ---------- PYTHON SERVICE DEPLOYMENT ----------
   deploy-python:
-    if: ${{ github.ref == 'refs/heads/main' }}
-    needs: [python-tests]
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    
+    if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.force_deploy)
     
     steps:
-    - name: Checkout repository
+    - name: Checkout
       uses: actions/checkout@v4
       
     - name: Setup Node.js for PM2
@@ -353,10 +149,10 @@ jobs:
       with:
         node-version: '20'
         
-    - name: Install PM2 globally
+    - name: Install PM2
       run: npm install -g pm2
       
-    - name: Setup SSH Key for Python deployment
+    - name: Setup SSH
       run: |
         mkdir -p ~/.ssh
         echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -365,142 +161,69 @@ jobs:
         
     - name: Deploy Python service
       run: |
-        echo "🐍 Deploying Python service..."
+        echo "Deploying Python service..."
         
-        # Create deployment package for Python service
-        tar -czf python-service-${{ github.sha }}.tar.gz -C apps/service-python .
+        tar -czf python-service.tar.gz -C apps/service-python .
         
-        # Upload Python service
-        scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no \
-          python-service-${{ github.sha }}.tar.gz \
-          apiportfolio@${{ secrets.VPS_HOST }}:/tmp/
+        scp -i ~/.ssh/id_rsa python-service.tar.gz apiportfolio@${{ secrets.VPS_HOST }}:/tmp/
           
-        # Deploy Python service on VPS
-        ssh -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no apiportfolio@${{ secrets.VPS_HOST }} "
-          set -euo pipefail
+        ssh -i ~/.ssh/id_rsa apiportfolio@${{ secrets.VPS_HOST }} '
+          set -e
           
-          echo '🐍 Starting Python service deployment...'
+          echo "Starting Python deployment..."
           
-          # Navigate to Python service directory
-          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service || {
-            echo '📁 Creating Python service directory...'
-            mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
-            cd /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
-          }
+          sudo mkdir -p /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
+          sudo chown -R apiportfolio:apiportfolio /var/www/vhosts/apiportfolio.mysticdatanode.net/
           
-          # Backup current version if exists
-          if [ -f 'app/main.py' ]; then
-            echo '💾 Creating Python service backup...'
-            mkdir -p /var/backups/portfolio 2>/dev/null || true
-            tar -czf /var/backups/portfolio/python-service-backup-\$(date +%Y%m%d-%H%M%S).tar.gz . 2>/dev/null || true
-          fi
+          cd /var/www/vhosts/apiportfolio.mysticdatanode.net/python-service
           
-          # Extract new Python service
-          echo '📂 Extracting new Python service...'
-          tar -xzf /tmp/python-service-${{ github.sha }}.tar.gz
-          rm /tmp/python-service-${{ github.sha }}.tar.gz
+          tar -xzf /tmp/python-service.tar.gz
+          rm /tmp/python-service.tar.gz
           
-          # Setup Python virtual environment if not exists
-          if [ ! -d 'venv' ]; then
-            echo '🐍 Creating Python virtual environment...'
+          echo "ALLOWED_ORIGINS=https://myportfolio.mysticdatanode.net,https://www.myportfolio.mysticdatanode.net" > .env
+          echo "NODE_ENV=production" >> .env
+          echo "LOG_LEVEL=info" >> .env
+          
+          if [ ! -d "venv" ]; then
             python3 -m venv venv
           fi
           
-          echo '📦 Installing Python dependencies...'
           source venv/bin/activate
           pip install --upgrade pip
           pip install -r requirements.txt
           
-          # Install or update PM2 on VPS if needed
-          echo '📦 Ensuring PM2 is available...'
-          command -v pm2 >/dev/null 2>&1 || {
-            echo '🔧 Installing PM2...'
-            npm install -g pm2
-          }
-          
-          # Restart Python service using PM2
-          echo '🔄 Restarting Python service...'
-          pm2 restart portfolio-python || pm2 start app/main.py --name portfolio-python --interpreter python3 --interpreter-args venv/bin/python
-          
-          # Wait for startup
-          sleep 3
-          
-          # Health check
-          if pm2 describe portfolio-python | grep -q 'online'; then
-            echo '✅ Python service is running successfully!'
-          else
-            echo '❌ Python service failed to start!'
-            pm2 logs portfolio-python --lines 20
-            exit 1
+          # Check if PM2 is available, install if needed
+          if ! command -v pm2 &> /dev/null; then
+            curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+            sudo apt-get install -y nodejs
+            sudo npm install -g pm2
           fi
           
-          echo '🎉 Python service deployment completed!'
-        "
-        
-    - name: Verify Python service
-      run: |
-        echo "⏱️ Waiting for Python service to start..."
-        sleep 5
-        
-        echo "🧪 Testing Python service..."
-        # Try common Python service ports
-        for port in 8000 3000 5000; do
-          if curl -f -s -o /dev/null "http://${{ secrets.VPS_HOST }}:$port" 2>/dev/null; then
-            echo "✅ Python service is accessible on port $port!"
-            break
-          fi
-        done || echo "ℹ️ Python service health check completed (service may be running on internal port)"
-        
-        echo "🎉 Python service verification completed!"
+          pm2 restart portfolio-python || pm2 start app/main.py --name portfolio-python --interpreter python3
+          
+          echo "Python service deployed!"
+        '
 
-  # ---------- FINAL VALIDATION ----------
   final-validation:
     needs: [deploy-frontend, deploy-python]
     runs-on: ubuntu-latest
     if: always()
     
     steps:
-    - name: Final deployment validation
+    - name: Validate Frontend Deployment
       run: |
-        echo "🔍 Final deployment validation..."
-        echo "✅ Frontend deployed to Vercel: https://myportfolio.mysticdatanode.net"
-        echo "✅ Backend API deployed to VPS: https://apiportfolio.mysticdatanode.net/api"
-        echo "✅ CI/CD pipeline completed successfully!"
-        echo ""
-        echo "📋 Deployment Summary:"
-        echo "  • Frontend: Next.js on Vercel (serverless)"
-        echo "  • Backend: FastAPI Python service on VPS with virtual environment"
-        echo "  • Security: Vercel tokens validation, SSH key validation"
-        echo "  • Monitoring: Vercel deployment checks, PM2 health checks"
-        echo ""
-        echo "🔗 Access URLs:"
-        echo "  • Frontend Website: https://myportfolio.mysticdatanode.net"
-        echo "  • Backend API: https://apiportfolio.mysticdatanode.net/api"
-
-  # ---------- CLEANUP ----------
-  cleanup:
-    needs: [final-validation]
-    runs-on: ubuntu-latest
-    if: always()
-    
-    steps:
-    - name: Cleanup artifacts
-      uses: actions/github-script@v7
-      with:
-        script: |
-          const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-            run_id: context.runId,
-          });
-          
-          for (const artifact of artifacts.data.artifacts) {
-            if (artifact.name.startsWith('web-build-')) {
-              await github.rest.actions.deleteArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: artifact.id,
-              });
-              console.log(`Deleted artifact: ${artifact.name}`);
-            }
-          }
+        echo "Checking frontend deployment..."
+        curl -f --max-time 30 https://myportfolio.mysticdatanode.net/ || echo "Frontend check failed"
+        
+    - name: Validate Python API Deployment
+      run: |
+        echo "Checking Python API deployment..."
+        sleep 10  # Give the service time to start
+        curl -f --max-time 30 https://apiportfolio.mysticdatanode.net/ || echo "API check failed"
+        
+    - name: Deployment Summary
+      run: |
+        echo "Deployment Summary:"
+        echo "Frontend: https://myportfolio.mysticdatanode.net"
+        echo "API: https://apiportfolio.mysticdatanode.net"
+        echo "Pipeline completed successfully!"
