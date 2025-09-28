@@ -123,28 +123,61 @@ jobs:
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       working-directory: ./apps/web
+      timeout-minutes: 10
       run: |
         echo "Deploying to Vercel..."
+        
+        # Debug: Check if secrets are actually available
+        if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "❌ Vercel secrets not available in this step"
+          echo "VERCEL_TOKEN exists: ${{ secrets.VERCEL_TOKEN != '' }}"
+          echo "VERCEL_ORG_ID exists: ${{ secrets.VERCEL_ORG_ID != '' }}"
+          echo "VERCEL_PROJECT_ID exists: ${{ secrets.VERCEL_PROJECT_ID != '' }}"
+          exit 1
+        fi
         
         npm install -g vercel@latest
         
         echo "Setting up Vercel project..."
         # Create .vercel directory with project settings
         mkdir -p .vercel
-        echo '{"projectId":"'"$VERCEL_PROJECT_ID"'","orgId":"'"$VERCEL_ORG_ID"'"}' > .vercel/project.json
+        echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
+        cat .vercel/project.json
         
         echo "Deploying to Vercel..."
-        vercel --prod \
+        timeout 600 vercel --prod \
           --token "$VERCEL_TOKEN" \
           --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
           --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
           --yes
         
         echo "Vercel deployment completed!"
+        
+    - name: Fallback - Manual Vercel Deploy
+      if: failure()
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      working-directory: ./apps/web
+      run: |
+        echo "Primary deployment failed, trying manual approach..."
+        
+        # Simple deployment without project linking
+        echo "Creating basic vercel.json config..."
+        cat > vercel.json << EOF
+        {
+          "buildCommand": "npm run build",
+          "outputDirectory": ".next",
+          "framework": "nextjs",
+          "installCommand": "npm install"
+        }
+        EOF
+        
+        # Deploy with minimal configuration
+        timeout 600 vercel deploy --prod --token "$VERCEL_TOKEN" --yes || echo "Manual deployment also failed"
 
   deploy-python:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     
     if: github.ref == 'refs/heads/main' && (github.event_name == 'push' || inputs.force_deploy)
     
@@ -167,15 +200,23 @@ jobs:
         chmod 600 ~/.ssh/id_rsa
         ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
         
+        # Configure SSH to prevent hanging
+        cat >> ~/.ssh/config << EOF
+        Host ${{ secrets.VPS_HOST }}
+          ServerAliveInterval 30
+          ServerAliveCountMax 3
+          ConnectTimeout 10
+        EOF
+        
     - name: Deploy Python service
       run: |
         echo "Deploying Python service..."
         
         tar -czf python-service.tar.gz -C apps/service-python .
         
-        scp -i ~/.ssh/id_rsa python-service.tar.gz apiportfolio@${{ secrets.VPS_HOST }}:/tmp/
+        timeout 60 scp -i ~/.ssh/id_rsa -o ConnectTimeout=10 python-service.tar.gz apiportfolio@${{ secrets.VPS_HOST }}:/tmp/
           
-        ssh -i ~/.ssh/id_rsa apiportfolio@${{ secrets.VPS_HOST }} '
+        timeout 300 ssh -i ~/.ssh/id_rsa -o ConnectTimeout=10 apiportfolio@${{ secrets.VPS_HOST }} '
           set -e
           
           echo "Starting Python deployment..."
@@ -199,15 +240,25 @@ jobs:
           pip install --upgrade pip
           pip install -r requirements.txt
           
-          # Check if PM2 is available, install if needed (user-level)
-          if ! command -v pm2 &> /dev/null; then
-            # Install PM2 using existing Node.js (already installed in GitHub Actions)
-            npm install -g pm2
+          # Stop any existing PM2 processes first
+          pm2 delete portfolio-python 2>/dev/null || true
+          pm2 kill 2>/dev/null || true
+          
+          # Start service with timeout protection
+          timeout 30 python3 -c "import app.main; print(\"App can be imported successfully\")"
+          
+          # Use nohup instead of PM2 for simpler process management
+          nohup python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8000 > ~/python-service.log 2>&1 &
+          
+          # Wait a moment and check if process started
+          sleep 3
+          if pgrep -f "uvicorn app.main:app" > /dev/null; then
+            echo "Python service started successfully!"
+          else
+            echo "Failed to start Python service"
+            cat ~/python-service.log
+            exit 1
           fi
-          
-          pm2 restart portfolio-python || pm2 start app/main.py --name portfolio-python --interpreter python3
-          
-          echo "Python service deployed!"
         '
 
   final-validation:
