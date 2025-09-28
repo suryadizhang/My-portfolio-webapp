@@ -155,47 +155,36 @@ jobs:
         # Debug: Check if secrets are actually available
         if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
           echo "❌ Vercel secrets not available in this step"
-          echo "VERCEL_TOKEN exists: ${{ secrets.VERCEL_TOKEN != '' }}"
-          echo "VERCEL_ORG_ID exists: ${{ secrets.VERCEL_ORG_ID != '' }}"
-          echo "VERCEL_PROJECT_ID exists: ${{ secrets.VERCEL_PROJECT_ID != '' }}"
           exit 1
         fi
         
-        echo "Setting up Vercel project..."
-        # Create .vercel directory with project settings
-        mkdir -p .vercel
-        echo "{\"projectId\":\"$VERCEL_PROJECT_ID\",\"orgId\":\"$VERCEL_ORG_ID\"}" > .vercel/project.json
-        cat .vercel/project.json
+        echo "Using direct deployment approach (no project linking)..."
         
-        echo "Deploying to Vercel..."
+        # Remove any existing .vercel directory to start fresh
+        rm -rf .vercel
         
-        # Method 1: Try with project linking
+        # Deploy directly without trying to link to existing project
         timeout 600 vercel deploy --prod \
           --token "$VERCEL_TOKEN" \
           --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
           --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
-          --yes || {
+          --yes \
+          --scope "$VERCEL_ORG_ID" || {
           
-          echo "⚠️ Method 1 failed. Trying Method 2: Fresh deployment..."
+          echo "⚠️ Direct deployment failed. Trying manual approach with vercel.json..."
           
-          # Method 2: Remove .vercel and deploy fresh
-          rm -rf .vercel
-          timeout 600 vercel deploy --prod \
-            --token "$VERCEL_TOKEN" \
-            --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
-            --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
-            --name "portfolio-webapp" \
-            --yes || {
-            
-            echo "⚠️ Method 2 failed. Trying Method 3: Force deployment..."
-            
-            # Method 3: Force deployment with explicit name
-            timeout 600 vercel deploy --prod \
-              --token "$VERCEL_TOKEN" \
-              --force \
-              --name "my-portfolio-$(date +%s)" \
-              --yes || exit 1
-          }
+          # Create a basic vercel.json for deployment
+          cat > vercel.json << 'EOF'
+        {
+          "buildCommand": "npm run build",
+          "outputDirectory": ".next",
+          "framework": "nextjs",
+          "installCommand": "npm install"
+        }
+        EOF
+          
+          # Try deployment with simplified configuration
+          timeout 600 vercel deploy --prod --token "$VERCEL_TOKEN" --yes || exit 1
         }
         
         echo "Vercel deployment completed!"
