@@ -201,7 +201,25 @@ jobs:
         }
         TSCONFIG_EOF
         
-        # Create vercel.json with proper build configuration
+        # Copy built packages to make them available as node_modules
+        echo "Setting up monorepo dependencies for Vercel..."
+        
+        # Create node_modules directory structure for local packages
+        mkdir -p node_modules/@portfolio
+        
+        # Copy built packages
+        echo "Copying built packages..."
+        cp -r ../../packages/ui node_modules/@portfolio/ui
+        cp -r ../../packages/utils node_modules/@portfolio/utils
+        cp -r ../../packages/config node_modules/@portfolio/config
+        
+        # Ensure all package dependencies are available
+        cd node_modules/@portfolio/ui && npm install --omit=dev || true
+        cd ../utils && npm install --omit=dev || true
+        cd ../config && npm install --omit=dev || true
+        cd ../../../
+        
+        # Create vercel.json for deployment
         cat > vercel.json << 'VERCEL_EOF'
         {
           "buildCommand": "npm run build",
