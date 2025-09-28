@@ -145,11 +145,35 @@ jobs:
         cat .vercel/project.json
         
         echo "Deploying to Vercel..."
-        timeout 600 vercel --prod \
+        
+        # Method 1: Try with project linking
+        timeout 600 vercel deploy --prod \
           --token "$VERCEL_TOKEN" \
           --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
           --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
-          --yes
+          --yes || {
+          
+          echo "⚠️ Method 1 failed. Trying Method 2: Fresh deployment..."
+          
+          # Method 2: Remove .vercel and deploy fresh
+          rm -rf .vercel
+          timeout 600 vercel deploy --prod \
+            --token "$VERCEL_TOKEN" \
+            --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
+            --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
+            --name "portfolio-webapp" \
+            --yes || {
+            
+            echo "⚠️ Method 2 failed. Trying Method 3: Force deployment..."
+            
+            # Method 3: Force deployment with explicit name
+            timeout 600 vercel deploy --prod \
+              --token "$VERCEL_TOKEN" \
+              --force \
+              --name "my-portfolio-$(date +%s)" \
+              --yes || exit 1
+          }
+        }
         
         echo "Vercel deployment completed!"
         
