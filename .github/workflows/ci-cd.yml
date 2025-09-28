@@ -143,51 +143,71 @@ jobs:
         npm run build
 
     - name: Deploy to Vercel
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
-        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
       working-directory: ./apps/web
       timeout-minutes: 10
       run: |
         echo "Deploying to Vercel..."
         
-        # Debug: Check if secrets are actually available
-        if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
-          echo "❌ Vercel secrets not available in this step"
+        # Check if VERCEL_TOKEN is available
+        if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
+          echo "❌ VERCEL_TOKEN not available"
           exit 1
         fi
         
-        echo "Using direct deployment approach (no project linking)..."
+        echo "Preparing for fresh Vercel deployment..."
         
         # Remove any existing .vercel directory to start fresh
         rm -rf .vercel
         
-        # Deploy directly without trying to link to existing project
-        timeout 600 vercel deploy --prod \
-          --token "$VERCEL_TOKEN" \
-          --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
-          --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
-          --yes \
-          --scope "$VERCEL_ORG_ID" || {
-          
-          echo "⚠️ Direct deployment failed. Trying manual approach with vercel.json..."
-          
-          # Create a basic vercel.json for deployment
-          cat > vercel.json << 'EOF'
+        # Ensure tsconfig.base.json exists in workspace root for Vercel build
+        if [ ! -f "../../tsconfig.base.json" ]; then
+          echo "Creating tsconfig.base.json for Vercel build..."
+          cat > ../../tsconfig.base.json << 'TSCONFIG_EOF'
+        {
+          "compilerOptions": {
+            "target": "ES2022",
+            "module": "ESNext",
+            "moduleResolution": "Node",
+            "strict": true,
+            "esModuleInterop": true,
+            "skipLibCheck": true,
+            "baseUrl": ".",
+            "paths": {
+              "@/*": ["apps/web/src/*"]
+            }
+          }
+        }
+        TSCONFIG_EOF
+        fi
+        
+        # Create vercel.json with proper build configuration
+        cat > vercel.json << 'VERCEL_EOF'
         {
           "buildCommand": "npm run build",
           "outputDirectory": ".next",
           "framework": "nextjs",
-          "installCommand": "npm install"
+          "installCommand": "npm install",
+          "build": {
+            "env": {
+              "NEXT_PUBLIC_API_BASE_URL": "https://apiportfolio.mysticdatanode.net/api",
+              "NEXT_PUBLIC_SITE_URL": "https://myportfolio.mysticdatanode.net"
+            }
+          }
         }
-        EOF
-          
-          # Try deployment with simplified configuration
-          timeout 600 vercel deploy --prod --token "$VERCEL_TOKEN" --yes || exit 1
+        VERCEL_EOF
+        
+        # Deploy with only VERCEL_TOKEN (no project/org IDs to avoid conflicts)
+        export VERCEL_TOKEN="${{ secrets.VERCEL_TOKEN }}"
+        unset VERCEL_ORG_ID
+        unset VERCEL_PROJECT_ID
+        
+        echo "Deploying to Vercel with fresh project..."
+        timeout 600 vercel deploy --prod --yes || {
+          echo "❌ Vercel deployment failed"
+          exit 1
         }
         
-        echo "Vercel deployment completed!"
+        echo "✅ Vercel deployment completed!"
         
     - name: Fallback - Manual Vercel Deploy
       if: failure()
