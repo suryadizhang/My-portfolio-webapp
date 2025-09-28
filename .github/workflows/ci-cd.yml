@@ -113,6 +113,13 @@ jobs:
     - name: Build for Vercel
       run: |
         echo "Building for Vercel..."
+        
+        # Ensure tsconfig.base.json is accessible
+        if [ ! -f "../../tsconfig.base.json" ]; then
+          echo "⚠️ tsconfig.base.json not found in root, creating symlink..."
+          ln -sf ../../tsconfig.base.json ./tsconfig.base.json
+        fi
+        
         export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
         export NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
         npm run build
