@@ -159,10 +159,10 @@ jobs:
         # Remove any existing .vercel directory to start fresh
         rm -rf .vercel
         
-        # Ensure tsconfig.base.json exists in workspace root for Vercel build
-        if [ ! -f "../../tsconfig.base.json" ]; then
-          echo "Creating tsconfig.base.json for Vercel build..."
-          cat > ../../tsconfig.base.json << 'TSCONFIG_EOF'
+        # Create standalone tsconfig.json for Vercel build (no external dependencies)
+        echo "Creating standalone tsconfig.json for Vercel build..."
+        
+        cat > ./tsconfig.json << 'TSCONFIG_EOF'
         {
           "compilerOptions": {
             "target": "ES2022",
@@ -172,13 +172,34 @@ jobs:
             "esModuleInterop": true,
             "skipLibCheck": true,
             "baseUrl": ".",
+            "jsx": "preserve",
+            "types": ["node"],
+            "lib": ["dom", "dom.iterable", "esnext"],
+            "allowJs": true,
+            "noEmit": true,
+            "resolveJsonModule": true,
+            "isolatedModules": true,
+            "incremental": true,
             "paths": {
-              "@/*": ["apps/web/src/*"]
-            }
-          }
+              "@/*": ["src/*"]
+            },
+            "plugins": [
+              {
+                "name": "next"
+              }
+            ]
+          },
+          "include": [
+            "next-env.d.ts",
+            "src/**/*.ts",
+            "src/**/*.tsx",
+            ".next/types/**/*.ts"
+          ],
+          "exclude": [
+            "node_modules"
+          ]
         }
         TSCONFIG_EOF
-        fi
         
         # Create vercel.json with proper build configuration
         cat > vercel.json << 'VERCEL_EOF'
