@@ -9,7 +9,39 @@ on:
       - 'packages/utils/**'
       - 'packages/config/**'
       - 'package.json'
-      - 'package-lock.json'
+      - name: Validate required secrets
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+      run: |
+        echo "🔍 Validating Vercel deployment secrets..."
+        M=0
+        
+        # Check if secrets exist and have content
+        if [ -z "$VERCEL_TOKEN" ]; then
+          echo "❌ VERCEL_TOKEN is empty or not set"
+          M=1
+        else
+          echo "✅ VERCEL_TOKEN is set (length: ${#VERCEL_TOKEN})"
+        fi
+        
+        if [ -z "$VERCEL_ORG_ID" ]; then
+          echo "❌ VERCEL_ORG_ID is empty or not set"
+          M=1
+        else
+          echo "✅ VERCEL_ORG_ID is set: ${VERCEL_ORG_ID}"
+        fi
+        
+        if [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "❌ VERCEL_PROJECT_ID is empty or not set"
+          M=1
+        else
+          echo "✅ VERCEL_PROJECT_ID is set (first 10 chars): ${VERCEL_PROJECT_ID:0:10}..."
+        fi
+        
+        [ "$M" -eq 0 ] || { echo "❌ Missing required Vercel secrets - deployment aborted"; exit 1; }
+        echo "✅ All required Vercel secrets are properly configured"ckage-lock.json'
       - '.github/workflows/**'
   pull_request:
     branches: [main, develop]
@@ -249,17 +281,52 @@ jobs:
         echo "✅ Build completed for Vercel"
 
     - name: Deploy to Vercel
-      uses: amondnet/vercel-action@v25
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
         VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
-      with:
-        vercel-token: ${{ secrets.VERCEL_TOKEN }}
-        vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-        vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-        working-directory: ./apps/web
-        vercel-args: '--prod --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net'
+      working-directory: ./apps/web
+      run: |
+        echo "🚀 Starting Vercel deployment..."
+        
+        # Install Vercel CLI
+        npm install -g vercel@latest
+        
+        # Verify secrets are properly set
+        echo "🔍 Verifying Vercel configuration..."
+        if [ -z "$VERCEL_TOKEN" ]; then
+          echo "❌ VERCEL_TOKEN is empty"
+          exit 1
+        fi
+        if [ -z "$VERCEL_ORG_ID" ]; then
+          echo "❌ VERCEL_ORG_ID is empty" 
+          exit 1
+        fi
+        if [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "❌ VERCEL_PROJECT_ID is empty"
+          exit 1
+        fi
+        echo "✅ All Vercel secrets are properly configured"
+        
+        echo "🔗 API Configuration:"
+        echo "  - API Base URL: https://apiportfolio.mysticdatanode.net/api (VPS/Plesk hosted)"
+        echo "  - Frontend URL: https://myportfolio.mysticdatanode.net (Vercel hosted)"
+        
+        # Link project to avoid "Project not found" errors
+        echo "🔗 Linking Vercel project..."
+        vercel link --token "$VERCEL_TOKEN" --scope "$VERCEL_ORG_ID" --yes
+        
+        # Deploy to Vercel with explicit project linking
+        echo "📦 Deploying to Vercel..."
+        vercel --prod \
+          --token "$VERCEL_TOKEN" \
+          --scope "$VERCEL_ORG_ID" \
+          --build-env NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api \
+          --build-env NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net \
+          --confirm \
+          --force
+        
+        echo "✅ Vercel deployment completed!"
 
     - name: Verify Vercel deployment
       run: |
