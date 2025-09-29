@@ -23,7 +23,7 @@
     "preflight": "node scripts/preflight.js",
     "preflight:ps": "powershell -ExecutionPolicy Bypass -File scripts/preflight.ps1",
     "prepush": "npm run preflight",
-    "prepare": "husky"
+    "prepare": "husky || true"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
