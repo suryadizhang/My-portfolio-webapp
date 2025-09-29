@@ -85,11 +85,6 @@ export const profileData: Profile = {
       program: "Full-Stack Software Engineering",
       dates: "Mar 2025 – Sep 2025",
       notes: "Certificate of Completion; capstone booking platform (Next.js + FastAPI/Postgres)"
-    },
-    {
-      school: "Universitas Surabaya",
-      program: "Economics (Some College, No Degree)",
-      notes: "Micro/Macroeconomics, Statistics; analytical and quantitative foundations"
     }
   ],
   certifications: [

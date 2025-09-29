@@ -55,11 +55,6 @@
             "program": "Full-Stack Software Engineering",
             "dates": "Mar 2025 – Sep 2025",
             "notes": "Certificate of Completion; capstone booking platform (Next.js + FastAPI/Postgres)"
-          },
-          {
-            "school": "Universitas Surabaya",
-            "program": "Economics (Some College, No Degree)",
-            "notes": "Micro/Macroeconomics, Statistics; analytical and quantitative foundations"
           }
         ],
         "certifications": [
@@ -560,33 +555,6 @@
         "next",
         "fastapi",
         "postgres"
-      ]
-    },
-    {
-      "id": "profile-edu-1",
-      "type": "profile",
-      "title": "Education: Economics (Some College, No Degree)",
-      "content": "Economics (Some College, No Degree) at Universitas Surabaya (undefined). Micro/Macroeconomics, Statistics; analytical and quantitative foundations",
-      "metadata": {
-        "school": "Universitas Surabaya",
-        "program": "Economics (Some College, No Degree)",
-        "notes": "Micro/Macroeconomics, Statistics; analytical and quantitative foundations"
-      },
-      "source": "profile.json",
-      "tokens": [
-        "economics",
-        "some",
-        "college",
-        "degree",
-        "universitas",
-        "surabaya",
-        "undefined",
-        "micro",
-        "macroeconomics",
-        "statistics",
-        "analytical",
-        "quantitative",
-        "foundations"
       ]
     },
     {
