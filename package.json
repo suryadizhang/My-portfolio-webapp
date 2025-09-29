@@ -30,7 +30,6 @@
     "@turbo/gen": "^1.12.4",
     "husky": "^9.1.6",
     "prettier": "^3.2.5",
-    "tsup": "^8.3.0",
     "turbo": "^1.12.4",
     "typescript": "^5.0.0"
   },
@@ -64,6 +63,7 @@
     "@vercel/og": "^0.8.5",
     "next-themes": "^0.4.6",
     "nodemailer": "^7.0.6",
-    "resend": "^6.1.0"
+    "resend": "^6.1.0",
+    "tsup": "^8.3.0"
   }
 }
