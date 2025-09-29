@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build --filter=@portfolio/web --include-dependencies",
+  "buildCommand": "npm run build",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
