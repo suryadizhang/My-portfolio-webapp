@@ -121,7 +121,6 @@ jobs:
         npm run build
 
     - name: Deploy to Vercel (Auto-configure)
-      working-directory: ./apps/web
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -131,14 +130,27 @@ jobs:
       run: |
         echo "Deploying to Vercel with auto-configuration..."
         
+        # Debug secret availability in deployment step
+        echo "=== DEBUGGING SECRETS IN DEPLOYMENT STEP ==="
+        echo "VERCEL_TOKEN present: $([ -n "$VERCEL_TOKEN" ] && echo 'YES' || echo 'NO')"
+        echo "VERCEL_TOKEN length: ${#VERCEL_TOKEN}"
+        echo "VERCEL_ORG_ID present: $([ -n "$VERCEL_ORG_ID" ] && echo 'YES' || echo 'NO')"
+        echo "VERCEL_ORG_ID value: '$VERCEL_ORG_ID'"
+        echo "VERCEL_PROJECT_ID present: $([ -n "$VERCEL_PROJECT_ID" ] && echo 'YES' || echo 'NO')"
+        echo "VERCEL_PROJECT_ID value: '$VERCEL_PROJECT_ID'"
+        echo "Current working directory: $(pwd)"
+        echo "============================================="
+        
         # Validate all secrets are available
         if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
           echo "❌ Missing Vercel secrets in deployment step"
-          echo "VERCEL_TOKEN length: ${#VERCEL_TOKEN}"
-          echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"  
-          echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
           exit 1
         fi
+        
+        # Change to web app directory
+        cd apps/web
+        echo "Changed to directory: $(pwd)"
+        ls -la
         
         # Create .vercel directory and project.json for linking
         echo "Setting up Vercel project configuration..."
@@ -150,17 +162,40 @@ jobs:
         }
         EOF
         
+        echo "Created .vercel/project.json:"
+        cat .vercel/project.json
+        
         # Deploy to the linked project
         echo "Deploying to linked Vercel project..."
         echo "Using project ID: $VERCEL_PROJECT_ID"
         echo "Using org ID: $VERCEL_ORG_ID"
         
-        if ! vercel deploy --prod --yes --token "$VERCEL_TOKEN"; then
-          echo "⚠️ Linked project deployment failed, trying fresh deployment..."
+        # Try deployment with comprehensive error handling
+        if ! vercel deploy --prod --yes --token "$VERCEL_TOKEN" --debug; then
+          echo "⚠️ Linked project deployment failed, trying alternative approaches..."
           
-          # Remove project linking and deploy fresh
+          # Check if the project exists at all
+          echo "Checking if project exists with vercel ls..."
+          vercel ls --token "$VERCEL_TOKEN" || echo "Could not list projects"
+          
+          # Try without project linking (fresh deployment)
+          echo "Trying fresh deployment without linking..."
           rm -rf .vercel
-          vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web"
+          
+          # Deploy with explicit project name
+          if ! vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web" --debug; then
+            echo "❌ Fresh deployment also failed"
+            echo "Trying with different approach..."
+            
+            # Last resort: deploy without --prod flag first, then promote
+            if vercel deploy --yes --token "$VERCEL_TOKEN" --debug; then
+              echo "Preview deployment successful, promoting to production..."
+              vercel --prod --token "$VERCEL_TOKEN"
+            else
+              echo "❌ All deployment strategies failed"
+              exit 1
+            fi
+          fi
         fi
         
         echo "✅ Vercel deployment completed!"
