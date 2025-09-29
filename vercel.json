@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "name": "my-portfolio-webapp-web",
   "buildCommand": "npm run build --filter=@portfolio/web --include-dependencies",
   "installCommand": "npm install",
   "outputDirectory": "apps/web/.next",
@@ -15,11 +14,6 @@
       "NODE_ENV": "production",
       "NEXT_PUBLIC_SITE_URL": "https://myportfolio.mysticdatanode.net",
       "NEXT_PUBLIC_API_BASE_URL": "https://apiportfolio.mysticdatanode.net/api"
-    }
-  },
-  "functions": {
-    "apps/web/app/api/**/*.ts": {
-      "runtime": "nodejs20.x"
     }
   },
   "regions": ["iad1"]
