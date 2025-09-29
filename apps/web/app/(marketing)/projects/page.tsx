@@ -20,7 +20,7 @@ export default function ProjectsPage() {
       {/* Hero Section */}
       <section className="mb-20">
         <div className="max-w-4xl mx-auto text-center">
-          <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6">
+          <div className="inline-flex items-center gap-2 bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 px-4 py-2 rounded-full text-sm font-medium mb-6">
             <Code2 className="h-4 w-4" />
             Production-Ready Projects
           </div>
@@ -32,18 +32,18 @@ export default function ProjectsPage() {
           </p>
           
           <div className="grid md:grid-cols-3 gap-6 mb-8">
-            <div className="flex items-center justify-center gap-3 p-4 bg-green-50 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-green-600" />
+            <div className="flex items-center justify-center gap-3 p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+              <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-400" />
               <div>
-                <p className="font-semibold text-green-900">Live Production</p>
-                <p className="text-sm text-green-700">Real users & metrics</p>
+                <p className="font-semibold text-green-900 dark:text-green-200">Live Production</p>
+                <p className="text-sm text-green-700 dark:text-green-300">Real users & metrics</p>
               </div>
             </div>
-            <div className="flex items-center justify-center gap-3 p-4 bg-purple-50 rounded-lg">
-              <Zap className="h-6 w-6 text-purple-600" />
+            <div className="flex items-center justify-center gap-3 p-4 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+              <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               <div>
-                <p className="font-semibold text-purple-900">Full-Stack</p>
-                <p className="text-sm text-purple-700">Frontend to deployment</p>
+                <p className="font-semibold text-purple-900 dark:text-purple-200">Full-Stack</p>
+                <p className="text-sm text-purple-700 dark:text-purple-300">Frontend to deployment</p>
               </div>
             </div>
             <div className="flex items-center justify-center gap-3 p-4 bg-orange-50 rounded-lg">
@@ -224,9 +224,9 @@ export default function ProjectsPage() {
       )}
 
       {/* Call to Action */}
-      <section className="text-center bg-gray-50 rounded-2xl p-12">
-        <h2 className="text-3xl font-bold mb-4">Interested in Working Together?</h2>
-        <p className="text-xl text-gray-600 mb-8">
+      <section className="text-center bg-gray-50 dark:bg-gray-800 rounded-2xl p-12">
+        <h2 className="text-3xl font-bold mb-4 text-gray-900 dark:text-gray-100">Interested in Working Together?</h2>
+        <p className="text-xl text-gray-600 dark:text-gray-300 mb-8">
           These projects represent my approach to building scalable, user-focused applications. 
           Let's discuss how I can bring this expertise to your team.
         </p>

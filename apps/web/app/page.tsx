@@ -36,7 +36,7 @@ export default function HomePage() {
               <p className="text-sm font-medium tracking-wide text-slate-500 uppercase mb-4">
                 (He/Him) • Software Engineer
               </p>
-              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-slate-900 mb-6">
+              <h1 className="text-4xl font-bold tracking-tight sm:text-5xl lg:text-6xl text-slate-900 dark:text-white mb-6">
                 {profile.name}
               </h1>
               
@@ -194,8 +194,8 @@ export default function HomePage() {
               </div>
 
               {/* Personal Note */}
-              <div className="bg-gray-50 rounded-lg p-6 border-l-4 border-blue-500">
-                <p className="text-gray-700 leading-relaxed">
+              <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 border-l-4 border-blue-500 dark:border-blue-400">
+                <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
                   <strong>Outside of coding:</strong> reading manga, playing video games, cooking, and exploring new frameworks. 
                   I thrive in environments where <strong>curiosity</strong>, <strong>collaboration</strong>, and <strong>shipping real value</strong> come first.
                 </p>
@@ -419,10 +419,10 @@ export default function HomePage() {
 
         {/* Call to Action */}
         <section className="text-center">
-          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <Card className="max-w-2xl mx-auto bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/20 border-blue-200 dark:border-blue-800">
             <CardContent className="pt-8 pb-8">
-              <h2 className="text-2xl font-bold mb-4">Ready to Build Something Great?</h2>
-              <p className="text-gray-600 mb-6 text-lg">
+              <h2 className="text-2xl font-bold mb-4 text-gray-900 dark:text-gray-100">Ready to Build Something Great?</h2>
+              <p className="text-gray-600 dark:text-gray-300 mb-6 text-lg">
                 I'm actively looking for opportunities where I can contribute to meaningful projects, 
                 work with great teams, and continue growing as an engineer.
               </p>
