@@ -214,10 +214,66 @@ jobs:
         mkdir -p src/utils-lib
         cp -r ../../packages/utils/src/* src/utils-lib/ || true
         
-        # Update imports to use local paths instead of @portfolio packages
+        # Update imports to use correct relative paths
         echo "Updating import paths..."
-        find . -name "*.tsx" -o -name "*.ts" | grep -v node_modules | xargs sed -i 's|@portfolio/ui|../ui|g' || true
-        find . -name "*.tsx" -o -name "*.ts" | grep -v node_modules | xargs sed -i 's|@portfolio/utils|../utils-lib|g' || true
+        cat > update-imports.js << 'SCRIPT_EOF'
+        const fs = require('fs');
+        const path = require('path');
+        
+        function getRelativePath(fromFile, toDir) {
+          const fromDir = path.dirname(fromFile);
+          const relativePath = path.relative(fromDir, toDir);
+          return relativePath.replace(/\\/g, '/') || '.';
+        }
+        
+        function updateImportsInFile(filePath) {
+          try {
+            let content = fs.readFileSync(filePath, 'utf8');
+            let updated = false;
+            
+            // Calculate relative paths from this file to src/ui and src/utils-lib
+            const uiPath = getRelativePath(filePath, './src/ui');
+            const utilsPath = getRelativePath(filePath, './src/utils-lib');
+            
+            // Replace @portfolio/ui imports
+            if (content.includes('@portfolio/ui')) {
+              content = content.replace(/@portfolio\/ui/g, uiPath);
+              updated = true;
+            }
+            
+            // Replace @portfolio/utils imports  
+            if (content.includes('@portfolio/utils')) {
+              content = content.replace(/@portfolio\/utils/g, utilsPath);
+              updated = true;
+            }
+            
+            if (updated) {
+              fs.writeFileSync(filePath, content);
+              console.log(`Updated imports in: ${filePath} (ui: ${uiPath}, utils: ${utilsPath})`);
+            }
+          } catch (error) {
+            console.log(`Error processing ${filePath}:`, error.message);
+          }
+        }
+        
+        function walkDir(dir) {
+          const files = fs.readdirSync(dir);
+          files.forEach(file => {
+            const filePath = path.join(dir, file);
+            const stat = fs.statSync(filePath);
+            
+            if (stat.isDirectory() && !file.includes('node_modules') && !file.includes('.git')) {
+              walkDir(filePath);
+            } else if ((file.endsWith('.tsx') || file.endsWith('.ts')) && !file.includes('node_modules')) {
+              updateImportsInFile(filePath);
+            }
+          });
+        }
+        
+        walkDir('.');
+        SCRIPT_EOF
+        
+        node update-imports.js
         
         # Install only the direct dependencies we need
         npm install lucide-react class-variance-authority clsx tailwind-merge
