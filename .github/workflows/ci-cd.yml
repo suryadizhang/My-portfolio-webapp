@@ -294,13 +294,11 @@ jobs:
         }
         VERCEL_EOF
         
-        # Deploy with only VERCEL_TOKEN (no project/org IDs to avoid conflicts)
+        # Deploy with VERCEL_TOKEN
         export VERCEL_TOKEN="${{ secrets.VERCEL_TOKEN }}"
-        unset VERCEL_ORG_ID
-        unset VERCEL_PROJECT_ID
         
         echo "Deploying to Vercel with fresh project..."
-        timeout 600 vercel deploy --prod --yes || {
+        timeout 600 vercel deploy --prod --yes --token "$VERCEL_TOKEN" || {
           echo "❌ Vercel deployment failed"
           exit 1
         }
