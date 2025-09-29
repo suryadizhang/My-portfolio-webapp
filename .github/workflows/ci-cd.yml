@@ -116,37 +116,19 @@ jobs:
     - name: Build for Vercel
       run: |
         echo "Building for Vercel..."
-        
-        # Ensure tsconfig.base.json exists in root
-        if [ ! -f "tsconfig.base.json" ]; then
-          echo "⚠️ tsconfig.base.json not found in root, creating it..."
-          cat > tsconfig.base.json << 'TSCONFIG_EOF'
-        {
-          "compilerOptions": {
-            "target": "ES2022",
-            "module": "ESNext",
-            "moduleResolution": "Node",
-            "strict": true,
-            "esModuleInterop": true,
-            "skipLibCheck": true,
-            "baseUrl": ".",
-            "paths": {
-              "@/*": ["apps/web/src/*"]
-            }
-          }
-        }
-        TSCONFIG_EOF
-        fi
-        
         export NEXT_PUBLIC_API_BASE_URL=https://apiportfolio.mysticdatanode.net/api
         export NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
         npm run build
 
-    - name: Deploy to Vercel
-      working-directory: ./apps/web
-      timeout-minutes: 10
+    - name: Deploy to Vercel (Simplified)
+      env:
+        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+        VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+        NEXT_PUBLIC_API_BASE_URL: https://apiportfolio.mysticdatanode.net/api
+        NEXT_PUBLIC_SITE_URL: https://myportfolio.mysticdatanode.net
       run: |
-        echo "Deploying to Vercel..."
+        echo "Deploying to Vercel with simplified approach..."
         
         # Check if VERCEL_TOKEN is available
         if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
@@ -154,178 +136,12 @@ jobs:
           exit 1
         fi
         
-        echo "Preparing for fresh Vercel deployment..."
-        
-        # Remove any existing .vercel directory to start fresh
-        rm -rf .vercel
-        
-        # Create standalone tsconfig.json for Vercel build (no external dependencies)
-        echo "Creating standalone tsconfig.json for Vercel build..."
-        
-        cat > ./tsconfig.json << 'TSCONFIG_EOF'
-        {
-          "compilerOptions": {
-            "target": "ES2022",
-            "module": "ESNext",
-            "moduleResolution": "Node",
-            "strict": true,
-            "esModuleInterop": true,
-            "skipLibCheck": true,
-            "baseUrl": ".",
-            "jsx": "preserve",
-            "types": ["node"],
-            "lib": ["dom", "dom.iterable", "esnext"],
-            "allowJs": true,
-            "noEmit": true,
-            "resolveJsonModule": true,
-            "isolatedModules": true,
-            "incremental": true,
-            "paths": {
-              "@/*": ["src/*"]
-            },
-            "plugins": [
-              {
-                "name": "next"
-              }
-            ]
-          },
-          "include": [
-            "next-env.d.ts",
-            "src/**/*.ts",
-            "src/**/*.tsx",
-            ".next/types/**/*.ts"
-          ],
-          "exclude": [
-            "node_modules"
-          ]
-        }
-        TSCONFIG_EOF
-        
-        # Create a simplified deployment package without monorepo dependencies
-        echo "Setting up simplified deployment for Vercel..."
-        
-        # Copy UI components directly into src
-        echo "Inlining UI components..."
-        mkdir -p src/ui
-        cp -r ../../packages/ui/src/* src/ui/ || true
-        
-        # Copy utils directly into src  
-        echo "Inlining utils..."
-        mkdir -p src/utils-lib
-        cp -r ../../packages/utils/src/* src/utils-lib/ || true
-        
-        # Update imports to use correct relative paths
-        echo "Updating import paths..."
-        cat > update-imports.js << 'SCRIPT_EOF'
-        const fs = require('fs');
-        const path = require('path');
-        
-        function getRelativePath(fromFile, toDir) {
-          const fromDir = path.dirname(fromFile);
-          const relativePath = path.relative(fromDir, toDir);
-          return relativePath.replace(/\\/g, '/') || '.';
-        }
-        
-        function updateImportsInFile(filePath) {
-          try {
-            let content = fs.readFileSync(filePath, 'utf8');
-            let updated = false;
-            
-            // Calculate relative paths from this file to src/ui and src/utils-lib
-            const uiPath = getRelativePath(filePath, './src/ui');
-            const utilsPath = getRelativePath(filePath, './src/utils-lib');
-            
-            // Replace @portfolio/ui imports
-            if (content.includes('@portfolio/ui')) {
-              content = content.replace(/@portfolio\/ui/g, uiPath);
-              updated = true;
-            }
-            
-            // Replace @portfolio/utils imports  
-            if (content.includes('@portfolio/utils')) {
-              content = content.replace(/@portfolio\/utils/g, utilsPath);
-              updated = true;
-            }
-            
-            if (updated) {
-              fs.writeFileSync(filePath, content);
-              console.log(`Updated imports in: ${filePath} (ui: ${uiPath}, utils: ${utilsPath})`);
-            }
-          } catch (error) {
-            console.log(`Error processing ${filePath}:`, error.message);
-          }
-        }
-        
-        function walkDir(dir) {
-          const files = fs.readdirSync(dir);
-          files.forEach(file => {
-            const filePath = path.join(dir, file);
-            const stat = fs.statSync(filePath);
-            
-            if (stat.isDirectory() && !file.includes('node_modules') && !file.includes('.git')) {
-              walkDir(filePath);
-            } else if ((file.endsWith('.tsx') || file.endsWith('.ts')) && !file.includes('node_modules')) {
-              updateImportsInFile(filePath);
-            }
-          });
-        }
-        
-        walkDir('.');
-        SCRIPT_EOF
-        
-        node update-imports.js
-        
-        # Install only the direct dependencies we need
-        npm install lucide-react class-variance-authority clsx tailwind-merge
-        
-        # Create vercel.json for deployment
-        cat > vercel.json << 'VERCEL_EOF'
-        {
-          "buildCommand": "npm run build",
-          "outputDirectory": ".next",
-          "framework": "nextjs",
-          "installCommand": "npm install",
-          "build": {
-            "env": {
-              "NEXT_PUBLIC_API_BASE_URL": "https://apiportfolio.mysticdatanode.net/api",
-              "NEXT_PUBLIC_SITE_URL": "https://myportfolio.mysticdatanode.net"
-            }
-          }
-        }
-        VERCEL_EOF
-        
-        # Deploy with VERCEL_TOKEN
-        export VERCEL_TOKEN="${{ secrets.VERCEL_TOKEN }}"
-        
-        echo "Deploying to Vercel with fresh project..."
-        timeout 600 vercel deploy --prod --yes --token "$VERCEL_TOKEN" || {
-          echo "❌ Vercel deployment failed"
-          exit 1
-        }
+        # Deploy directly from root using existing vercel.json
+        # This maintains consistency with local development
+        vercel deploy --prod --yes --token "$VERCEL_TOKEN"
         
         echo "✅ Vercel deployment completed!"
-        
-    - name: Fallback - Manual Vercel Deploy
-      if: failure()
-      env:
-        VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-      working-directory: ./apps/web
-      run: |
-        echo "Primary deployment failed, trying manual approach..."
-        
-        # Simple deployment without project linking
-        echo "Creating basic vercel.json config..."
-        cat > vercel.json << EOF
-        {
-          "buildCommand": "npm run build",
-          "outputDirectory": ".next",
-          "framework": "nextjs",
-          "installCommand": "npm install"
-        }
-        EOF
-        
-        # Deploy with minimal configuration
-        timeout 600 vercel deploy --prod --token "$VERCEL_TOKEN" --yes || echo "Manual deployment also failed"
+
 
   deploy-python:
     runs-on: ubuntu-latest
