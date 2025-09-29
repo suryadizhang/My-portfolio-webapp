@@ -23,15 +23,10 @@ export async function GET() {
         // Security and caching headers
         'Cache-Control': 'public, max-age=3600, immutable',
         'X-Content-Type-Options': 'nosniff',
-        'X-Frame-Options': 'SAMEORIGIN',
         
         // Additional headers to prevent download and force inline viewing
         'Accept-Ranges': 'bytes',
         'Content-Length': fileBuffer.length.toString(),
-        
-        // Cross-origin headers for iframe compatibility
-        'Cross-Origin-Embedder-Policy': 'unsafe-none',
-        'Cross-Origin-Resource-Policy': 'same-site',
       }
     });
     
