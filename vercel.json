@@ -1,7 +1,7 @@
 {
   "version": 2,
   "name": "my-portfolio",
-  "buildCommand": "npm run build --filter=@portfolio/web --include-dependencies",
+  "buildCommand": "npm run build",
   "installCommand": "npm ci --include-workspace-root --workspaces",
   "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
