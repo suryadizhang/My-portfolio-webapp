@@ -120,7 +120,7 @@ jobs:
         export NEXT_PUBLIC_SITE_URL=https://myportfolio.mysticdatanode.net
         npm run build
 
-    - name: Deploy to Vercel (Simplified)
+    - name: Deploy to Vercel (Auto-configure)
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -128,7 +128,7 @@ jobs:
         NEXT_PUBLIC_API_BASE_URL: https://apiportfolio.mysticdatanode.net/api
         NEXT_PUBLIC_SITE_URL: https://myportfolio.mysticdatanode.net
       run: |
-        echo "Deploying to Vercel with simplified approach..."
+        echo "Deploying to Vercel with auto-configuration..."
         
         # Check if VERCEL_TOKEN is available
         if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
@@ -136,9 +136,25 @@ jobs:
           exit 1
         fi
         
-        # Deploy directly from root using existing vercel.json
-        # This maintains consistency with local development
-        vercel deploy --prod --yes --token "$VERCEL_TOKEN"
+        # Try to link existing project first, or create new deployment
+        echo "Attempting to link to existing Vercel project..."
+        if [ -n "$VERCEL_PROJECT_ID" ] && [ -n "$VERCEL_ORG_ID" ]; then
+          echo "Using project ID: $VERCEL_PROJECT_ID"
+          echo "Using org ID: $VERCEL_ORG_ID"
+          
+          # Try to deploy with existing project configuration
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN" || {
+            echo "⚠️ Project-specific deployment failed, trying fresh deployment..."
+            
+            # Remove any existing .vercel directory and try fresh deployment
+            rm -rf .vercel
+            vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio"
+          }
+        else
+          echo "No project configuration found, creating fresh deployment..."
+          rm -rf .vercel
+          vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio"
+        fi
         
         echo "✅ Vercel deployment completed!"
 
