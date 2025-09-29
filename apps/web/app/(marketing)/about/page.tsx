@@ -348,14 +348,14 @@ export default function AboutPage() {
                 <CardContent>
                   <div className="space-y-4">
                     {profile.certifications.map((cert, index) => (
-                      <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
-                        <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                          <Trophy className="h-6 w-6 text-blue-600" />
+                      <div key={index} className="flex items-start gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <Trophy className="h-6 w-6 text-blue-600 dark:text-blue-400" />
                         </div>
                         <div>
-                          <h4 className="font-semibold">{cert.name}</h4>
-                          <p className="text-blue-600 font-medium text-sm">{cert.issuer}</p>
-                          <p className="text-gray-600 text-sm">{cert.date}</p>
+                          <h4 className="font-semibold text-gray-900 dark:text-gray-100">{cert.name}</h4>
+                          <p className="text-blue-600 dark:text-blue-400 font-medium text-sm">{cert.issuer}</p>
+                          <p className="text-gray-600 dark:text-gray-400 text-sm">{cert.date}</p>
                           <Badge variant="secondary" className="mt-2 text-xs">
                             ID: {cert.id}
                           </Badge>
@@ -407,11 +407,11 @@ export default function AboutPage() {
                 </h3>
                 <div className="space-y-3">
                   {profile.hobbies.map((hobby, index) => (
-                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-600 font-semibold text-sm">{index + 1}</span>
+                    <div key={index} className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                      <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0">
+                        <span className="text-blue-600 dark:text-blue-400 font-semibold text-sm">{index + 1}</span>
                       </div>
-                      <span className="text-gray-700">{hobby}</span>
+                      <span className="text-gray-700 dark:text-gray-300">{hobby}</span>
                     </div>
                   ))}
                 </div>
