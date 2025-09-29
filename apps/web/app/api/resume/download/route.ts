@@ -5,6 +5,28 @@ import fs from 'fs/promises';
 
 const RESUME_FILE_PATH = path.join(process.cwd(), 'public', 'resume', 'Suryadi_Zhang_Resume.pdf');
 
+/**
+ * Rate limiting for resume downloads - 5 downloads per hour
+ */
+const resumeRateLimit = new Map<string, { count: number; resetTime: number }>()
+
+function checkResumeRateLimit(ip: string, limit: number = 5, windowMs: number = 60 * 60 * 1000): boolean {
+  const now = Date.now()
+  const record = resumeRateLimit.get(ip)
+  
+  if (!record || record.resetTime < now) {
+    resumeRateLimit.set(ip, { count: 1, resetTime: now + windowMs })
+    return true
+  }
+  
+  if (record.count >= limit) {
+    return false
+  }
+  
+  record.count++
+  return true
+}
+
 // Server-side analytics logging function
 async function logServerAnalytics(eventData: any) {
   try {
@@ -28,6 +50,18 @@ export async function GET(request: NextRequest) {
   const userAgent = request.headers.get('user-agent') || '';
   const referer = request.headers.get('referer') || '';
   const clientIP = request.headers.get('x-forwarded-for') || request.headers.get('x-real-ip') || 'unknown';
+  
+  // Check rate limit - 5 downloads per hour
+  if (!checkResumeRateLimit(clientIP)) {
+    return NextResponse.json(
+      { 
+        error: 'Download limit exceeded. Please wait before downloading again.',
+        message: 'You can download the resume up to 5 times per hour.',
+        retryAfter: '1 hour'
+      },
+      { status: 429 }
+    );
+  }
   
   try {
     // Log analytics event

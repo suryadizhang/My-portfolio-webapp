@@ -327,7 +327,7 @@ suryadizhang.swe@gmail.com
  */
 const contactRateLimit = new Map<string, { count: number; resetTime: number }>()
 
-function checkContactRateLimit(ip: string, limit: number = 5, windowMs: number = 15 * 60 * 1000): boolean {
+function checkContactRateLimit(ip: string, limit: number = 5, windowMs: number = 60 * 60 * 1000): boolean {
   const now = Date.now()
   const record = contactRateLimit.get(ip)
   
