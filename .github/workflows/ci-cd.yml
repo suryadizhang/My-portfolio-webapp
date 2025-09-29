@@ -142,21 +142,19 @@ jobs:
           echo "Using project ID: $VERCEL_PROJECT_ID"
           echo "Using org ID: $VERCEL_ORG_ID"
           
-          # Try to deploy with existing project configuration
-          vercel deploy --prod --yes --token "$VERCEL_TOKEN" || {
-            echo "⚠️ Project-specific deployment failed, trying fresh deployment..."
-            
-            # Remove any existing .vercel directory and try fresh deployment
+            # Try to deploy with existing project configuration
+            vercel deploy --prod --yes --token "$VERCEL_TOKEN" || {
+              echo "⚠️ Project-specific deployment failed, trying fresh deployment..."
+              
+              # Remove any existing .vercel directory and try fresh deployment
+              rm -rf .vercel
+              vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web"
+            }
+          else
+            echo "No project configuration found, creating fresh deployment..."
             rm -rf .vercel
-            vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio"
-          }
-        else
-          echo "No project configuration found, creating fresh deployment..."
-          rm -rf .vercel
-          vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio"
-        fi
-        
-        echo "✅ Vercel deployment completed!"
+            vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web"
+          fi        echo "✅ Vercel deployment completed!"
 
 
   deploy-python:
