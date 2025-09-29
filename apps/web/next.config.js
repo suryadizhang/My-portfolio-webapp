@@ -133,6 +133,14 @@ const nextConfig = {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
+          {
+            key: 'X-Frame-Options',
+            value: 'ALLOWALL',
+          },
+          {
+            key: 'Content-Security-Policy',
+            value: 'frame-ancestors \'self\' https://myportfolio.mysticdatanode.net',
+          },
         ],
       },
     ]
