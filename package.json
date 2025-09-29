@@ -23,12 +23,13 @@
     "preflight": "node scripts/preflight.js",
     "preflight:ps": "powershell -ExecutionPolicy Bypass -File scripts/preflight.ps1",
     "prepush": "npm run preflight",
-    "prepare": "husky"
+    "prepare": "is-ci || husky"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.1.13",
     "@turbo/gen": "^1.12.4",
     "husky": "^9.1.7",
+    "is-ci": "^4.1.0",
     "prettier": "^3.2.5",
     "turbo": "^1.12.4",
     "typescript": "^5.0.0"
