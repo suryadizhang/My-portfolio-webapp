@@ -121,6 +121,7 @@ jobs:
         npm run build
 
     - name: Deploy to Vercel (Auto-configure)
+      working-directory: ./apps/web
       env:
         VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
         VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
@@ -130,28 +131,34 @@ jobs:
       run: |
         echo "Deploying to Vercel with auto-configuration..."
         
-        # Check if VERCEL_TOKEN is available
-        if [ -z "${{ secrets.VERCEL_TOKEN }}" ]; then
-          echo "❌ VERCEL_TOKEN not available"
+        # Validate all secrets are available
+        if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+          echo "❌ Missing Vercel secrets in deployment step"
+          echo "VERCEL_TOKEN length: ${#VERCEL_TOKEN}"
+          echo "VERCEL_ORG_ID: $VERCEL_ORG_ID"  
+          echo "VERCEL_PROJECT_ID: $VERCEL_PROJECT_ID"
           exit 1
         fi
         
-        # Try to link existing project first, or create new deployment
-        echo "Attempting to link to existing Vercel project..."
-        if [ -n "$VERCEL_PROJECT_ID" ] && [ -n "$VERCEL_ORG_ID" ]; then
-          echo "Using project ID: $VERCEL_PROJECT_ID"
-          echo "Using org ID: $VERCEL_ORG_ID"
+        # Create .vercel directory and project.json for linking
+        echo "Setting up Vercel project configuration..."
+        mkdir -p .vercel
+        cat > .vercel/project.json << EOF
+        {
+          "projectId": "$VERCEL_PROJECT_ID",
+          "orgId": "$VERCEL_ORG_ID"
+        }
+        EOF
+        
+        # Deploy to the linked project
+        echo "Deploying to linked Vercel project..."
+        echo "Using project ID: $VERCEL_PROJECT_ID"
+        echo "Using org ID: $VERCEL_ORG_ID"
+        
+        if ! vercel deploy --prod --yes --token "$VERCEL_TOKEN"; then
+          echo "⚠️ Linked project deployment failed, trying fresh deployment..."
           
-          # Try to deploy with existing project configuration
-          if ! vercel deploy --prod --yes --token "$VERCEL_TOKEN"; then
-            echo "⚠️ Project-specific deployment failed, trying fresh deployment..."
-            
-            # Remove any existing .vercel directory and try fresh deployment
-            rm -rf .vercel
-            vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web"
-          fi
-        else
-          echo "No project configuration found, creating fresh deployment..."
+          # Remove project linking and deploy fresh
           rm -rf .vercel
           vercel deploy --prod --yes --token "$VERCEL_TOKEN" --name "my-portfolio-webapp-web"
         fi
