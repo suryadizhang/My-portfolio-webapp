@@ -20,15 +20,19 @@
       }
     ],
     "incremental": true,
-    "baseUrl": ".",
+    "moduleResolution": "bundler",
     "paths": {
       "@/*": ["src/*"]
-    }
+    },
+    "ignoreDeprecations": "6.0"
   },
   "include": [
     "next-env.d.ts",
+    "app/globals.d.ts",
     "src/**/*.ts",
     "src/**/*.tsx",
+    "app/**/*.ts",
+    "app/**/*.tsx",
     ".next/types/**/*.ts"
   ],
   "exclude": [

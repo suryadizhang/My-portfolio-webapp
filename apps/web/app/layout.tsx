@@ -86,7 +86,7 @@ export default function RootLayout({
   children,
 }: {
   children: React.ReactNode
-}) {
+}) {  
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
@@ -111,9 +111,59 @@ export default function RootLayout({
               {children}
             </main>
             <Footer />
-            {/* ChatWidget removed - replaced with server-side API for stability */}
           </div>
         </ThemeProvider>
+        
+        {/* Chat widget will be loaded via external script after page load */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  if (typeof window === 'undefined') return;
+                  
+                  function loadChatWidget() {
+                    try {
+                      if (document.getElementById('chat-widget-container')) return;
+                      
+                      const script = document.createElement('script');
+                      script.src = '/chat-widget.js';
+                      script.async = true;
+                      script.defer = true;
+                      script.onload = function() {
+                        console.log('Chat widget loaded successfully');
+                      };
+                      script.onerror = function(e) {
+                        console.warn('Chat widget failed to load:', e);
+                      };
+                      document.body.appendChild(script);
+                    } catch (e) {
+                      console.warn('Error loading chat widget:', e);
+                    }
+                  }
+                  
+                  function initChatWidget() {
+                    try {
+                      if (document.readyState === 'complete') {
+                        setTimeout(loadChatWidget, 1000);
+                      } else {
+                        window.addEventListener('load', function() {
+                          setTimeout(loadChatWidget, 1000);
+                        });
+                      }
+                    } catch (e) {
+                      console.warn('Error initializing chat widget:', e);
+                    }
+                  }
+                  
+                  initChatWidget();
+                } catch (e) {
+                  console.warn('Chat widget initialization failed:', e);
+                }
+              })();
+            `
+          }}
+        />
       </body>
     </html>
   );

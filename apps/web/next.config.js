@@ -1,195 +1,70 @@
-// Optional bundle analyzer - only load if available and enabled
-const enableAnalyzer = process.env.ANALYZE === 'true';
-let withBundleAnalyzer = (config) => config; // default fallback
-
-if (enableAnalyzer) {
-  try {
-    withBundleAnalyzer = require('@next/bundle-analyzer')({
-      enabled: true,
-    });
-  } catch (error) {
-    console.warn('Bundle analyzer not available, skipping...');
-    withBundleAnalyzer = (config) => config;
-  }
-}
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'standalone',
   experimental: { mdxRs: true },
   pageExtensions: ['ts','tsx','js','jsx','md','mdx'],
-
+  
   // 👇 Important for monorepos: transpile your workspace pkgs
   transpilePackages: ['@portfolio/ui', '@portfolio/utils', '@portfolio/config'],
-
-  // Make the alias available in ALL builds (server & client)
-  webpack: (config, { dev }) => {
-    config.resolve.alias = {
-      ...(config.resolve.alias || {}),
-      '@': require('path').resolve(__dirname, 'src'),
-    };
-
-    if (!dev) {
-      config.optimization.usedExports = true;
-      config.optimization.sideEffects = false;
-    }
-    return config;
-  },
-
+  
   env: {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3001',
     NEXT_PUBLIC_SITE_URL: process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000',
   },
-  
-  // ESLint configuration
-  eslint: {
-    ignoreDuringBuilds: true, // Temporarily disable for production readiness
-  },
-  
-  // TypeScript configuration  
-  typescript: {
-    ignoreBuildErrors: false,
-    tsconfigPath: 'tsconfig.json',
-  },
+  eslint: { ignoreDuringBuilds: true },
+  typescript: { ignoreBuildErrors: false, tsconfigPath: 'tsconfig.json' },
 
-  // Production optimizations
   poweredByHeader: false,
   compress: true,
   generateEtags: true,
-  
-  // Performance optimizations
-  modularizeImports: {
-    'lucide-react': {
-      transform: 'lucide-react/dist/esm/icons/{{member}}',
-    },
-  },
-  
-  // Security headers
-  async headers() {
-    return [
-      {
-        source: '/(.*)',
-        headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'SAMEORIGIN',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
-          },
-          {
-            key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
-          },
-          {
-            key: 'X-XSS-Protection',
-            value: '1; mode=block',
-          },
-          {
-            key: 'Strict-Transport-Security',
-            value: 'max-age=31536000; includeSubDomains',
-          },
-        ],
-      },
-      {
-        source: '/api/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-cache, no-store, must-revalidate',
-          },
-        ],
-      },
-      {
-        source: '/_next/static/(.*)',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-      {
-        source: '/resume/(.*\\.pdf)',
-        headers: [
-          {
-            key: 'Content-Type',
-            value: 'application/pdf',
-          },
-          {
-            key: 'Content-Disposition',
-            value: 'inline; filename="Suryadi_Zhang_Resume.pdf"',
-          },
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=86400, immutable',
-          },
-          {
-            key: 'X-Content-Type-Options',
-            value: 'nosniff',
-          },
-          {
-            key: 'X-Frame-Options',
-            value: 'ALLOWALL',
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: 'frame-ancestors \'self\' https://myportfolio.mysticdatanode.net',
-          },
-        ],
-      },
-    ]
+
+  // ⛔️ COMMENT OUT while stabilizing
+  // modularizeImports: {
+  //   'lucide-react': { transform: 'lucide-react/dist/esm/icons/{{member}}' }
+  // },
+
+  // ✅ Keep only a simple, safe alias that applies to BOTH server & client
+  webpack: (config) => {
+    const path = require('path');
+    config.resolve.alias = {
+      ...(config.resolve.alias || {}),
+      '@': path.resolve(__dirname, 'src'),
+    };
+
+    // ⛔️ REMOVE these – they can drop needed modules:
+    // if (!dev) {
+    //   config.optimization.usedExports = true;
+    //   config.optimization.sideEffects = false;
+    // }
+
+    return config;
   },
 
-  // Redirects for SEO
-  async redirects() {
-    return [
-      {
-        source: '/portfolio',
-        destination: '/',
-        permanent: true,
-      },
-      {
-        source: '/home',
-        destination: '/',
-        permanent: true,
-      },
-    ]
-  },
-
-  // Image optimization
   images: {
-    formats: ['image/webp', 'image/avif'],
+    formats: ['image/webp','image/avif'],
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
-    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    minimumCacheTTL: 60 * 60 * 24 * 30,
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // Build output optimization
+  output: 'standalone',
   trailingSlash: false,
-}
+};
 
-// Optional MDX support
-let withMDX
+let withMDX;
 try {
   withMDX = require('@next/mdx')({
     extension: /\.mdx?$/,
-    options: {
-      remarkPlugins: [],
-      rehypePlugins: [],
-      providerImportSource: '@mdx-js/react',
-    },
-  })
-} catch (error) {
-  // MDX not available, use identity function
-  withMDX = (config) => config
+    options: { remarkPlugins: [], rehypePlugins: [], providerImportSource: '@mdx-js/react' },
+  });
+} catch { withMDX = (c) => c; }
+
+let withBundleAnalyzer = (c) => c;
+if (process.env.ANALYZE === 'true') {
+  try {
+    withBundleAnalyzer = require('@next/bundle-analyzer')({ enabled: true });
+  } catch { withBundleAnalyzer = (c) => c; }
 }
 
-module.exports = withBundleAnalyzer(withMDX(nextConfig))
+module.exports = withBundleAnalyzer(withMDX(nextConfig));
