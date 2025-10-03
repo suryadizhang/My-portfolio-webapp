@@ -20,11 +20,10 @@
       }
     ],
     "incremental": true,
-    "moduleResolution": "bundler",
+    "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"]
-    },
-    "ignoreDeprecations": "6.0"
+    }
   },
   "include": [
     "next-env.d.ts",
@@ -37,5 +36,8 @@
   ],
   "exclude": [
     "node_modules"
-  ]
+  ],
+  "ts-node": {
+    "esm": true
+  }
 }
