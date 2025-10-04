@@ -1,162 +1,336 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 
 export function ChatWidgetLoader() {
+  const [mounted, setMounted] = useState(false);
+
   useEffect(() => {
-    // Only run on client side
-    if (typeof window === 'undefined') {
-      console.log('⚠️ ChatWidgetLoader: Running on server side, skipping');
-      return;
-    }
-
-    console.log('🤖 ChatWidgetLoader: Component mounted on client side');
-    console.log('🌐 Current URL:', window.location.href);
-    console.log('📄 Document ready state:', document.readyState);
-
-    let loadAttempted = false;
-
-    // Check if already loaded
-    if (document.getElementById('chat-widget-container') || document.getElementById('chat-widget-script')) {
-      console.log('✅ Chat widget already exists, skipping initialization');
-      return;
-    }
-
-    function loadChatWidget() {
-      if (loadAttempted) {
-        console.log('⚠️ Load already attempted, skipping duplicate');
-        return;
-      }
-      
-      loadAttempted = true;
-      
-      try {
-        console.log('📡 Starting chat widget script load...');
-        console.log('📍 Document body available:', !!document.body);
-        console.log('📍 Document head available:', !!document.head);
-        
-        const script = document.createElement('script');
-        script.id = 'chat-widget-script';
-        script.src = '/chat-widget.js';
-        script.async = true;
-        script.defer = true;
-        script.type = 'text/javascript';
-        
-        // Add detailed event handlers
-        script.onload = function() {
-          console.log('✅ Chat widget script loaded successfully');
-          console.log('📝 Script element:', script);
-          
-          // Check if widget was created after a short delay
-          setTimeout(() => {
-            const container = document.getElementById('chat-widget-container');
-            const button = document.getElementById('chat-button');
-            console.log('🔍 Post-load check - Container:', !!container, 'Button:', !!button);
-          }, 2000);
-        };
-        
-        script.onerror = function(e) {
-          console.error('❌ Chat widget script failed to load');
-          console.error('❌ Error event:', e);
-          console.error('❌ Script src:', script.src);
-          
-          // Try alternative loading method
-          console.log('🔄 Attempting alternative loading method...');
-          loadChatWidgetAlternative();
-        };
-        
-        script.onabort = function() {
-          console.error('❌ Chat widget script load was aborted');
-        };
-        
-        // Append to body (preferred) or head as fallback
-        if (document.body) {
-          document.body.appendChild(script);
-          console.log('📝 Chat widget script added to document body');
-        } else if (document.head) {
-          document.head.appendChild(script);
-          console.log('📝 Chat widget script added to document head');
-        } else {
-          console.error('❌ Neither document.body nor document.head available');
-          return;
-        }
-        
-        console.log('📊 Script element after append:', script);
-        
-      } catch (e) {
-        console.error('❌ Exception in loadChatWidget:', e);
-        if (e instanceof Error) {
-          console.error('❌ Stack trace:', e.stack);
-        }
-      }
-    }
-
-    function loadChatWidgetAlternative() {
-      try {
-        console.log('🔄 Alternative loading: fetching script content directly');
-        
-        fetch('/chat-widget.js')
-          .then(response => {
-            if (!response.ok) {
-              throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-            }
-            return response.text();
-          })
-          .then(scriptContent => {
-            console.log('✅ Script content fetched, length:', scriptContent.length);
-            
-            // Execute the script content directly
-            const scriptElement = document.createElement('script');
-            scriptElement.id = 'chat-widget-script-inline';
-            scriptElement.type = 'text/javascript';
-            scriptElement.textContent = scriptContent;
-            
-            if (document.body) {
-              document.body.appendChild(scriptElement);
-              console.log('✅ Inline script executed');
-            } else {
-              console.error('❌ Document body not available for inline script');
-            }
-          })
-          .catch(fetchError => {
-            console.error('❌ Alternative loading failed:', fetchError);
-          });
-      } catch (e) {
-        console.error('❌ Exception in alternative loading:', e);
-      }
-    }
-
-    // Multiple loading strategies with different timing
-    console.log('🚀 Scheduling chat widget loads...');
+    setMounted(true);
     
-    // Immediate attempt if document is already complete
+    console.log('🤖 ChatWidgetLoader: Mounting inline chat widget...');
+    
+    // Create inline chat widget - no external dependencies
+    const createInlineChatWidget = () => {
+      try {
+        // Remove any existing widget
+        const existing = document.getElementById('chat-widget-container');
+        if (existing) {
+          existing.remove();
+        }
+
+        // Create container
+        const container = document.createElement('div');
+        container.id = 'chat-widget-container';
+        container.style.cssText = `
+          position: fixed;
+          bottom: 20px;
+          right: 20px;
+          z-index: 9999;
+          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+
+        // Create chat button
+        const button = document.createElement('button');
+        button.id = 'chat-button';
+        button.innerHTML = '💬';
+        button.style.cssText = `
+          width: 60px;
+          height: 60px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          border: none;
+          color: white;
+          font-size: 24px;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+          transition: all 0.3s ease;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        `;
+
+        // Hover effect
+        button.addEventListener('mouseenter', () => {
+          button.style.transform = 'scale(1.1)';
+        });
+        button.addEventListener('mouseleave', () => {
+          button.style.transform = 'scale(1)';
+        });
+
+        // Create chat window
+        const chatWindow = document.createElement('div');
+        chatWindow.id = 'chat-window';
+        chatWindow.style.cssText = `
+          position: absolute;
+          bottom: 70px;
+          right: 0;
+          width: 350px;
+          height: 500px;
+          background: white;
+          border-radius: 10px;
+          box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+          display: none;
+          flex-direction: column;
+          overflow: hidden;
+          border: 1px solid #e0e0e0;
+        `;
+
+        // Chat header
+        const header = document.createElement('div');
+        header.style.cssText = `
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: white;
+          padding: 15px;
+          font-weight: 600;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        `;
+        header.innerHTML = `
+          <span>🤖 Suryadi's AI Assistant</span>
+          <button id="close-chat" style="background: none; border: none; color: white; font-size: 18px; cursor: pointer; padding: 0; width: 20px; height: 20px;">×</button>
+        `;
+
+        // Chat messages area
+        const messages = document.createElement('div');
+        messages.id = 'chat-messages';
+        messages.style.cssText = `
+          flex: 1;
+          padding: 20px;
+          overflow-y: auto;
+          background: #f8f9fa;
+        `;
+
+        // Initial message
+        const initialMessage = document.createElement('div');
+        initialMessage.style.cssText = `
+          background: #e3f2fd;
+          padding: 12px;
+          border-radius: 8px;
+          margin-bottom: 10px;
+          border-left: 3px solid #2196f3;
+          animation: fadeIn 0.5s ease-in;
+        `;
+        initialMessage.innerHTML = `
+          <strong>👋 Hi! I'm Suryadi's AI assistant.</strong><br/>
+          <span style="color: #666;">Ask me about his projects, tech stack, or experience!</span>
+        `;
+        messages.appendChild(initialMessage);
+
+        // Chat input area
+        const inputArea = document.createElement('div');
+        inputArea.style.cssText = `
+          padding: 15px;
+          border-top: 1px solid #eee;
+          background: white;
+        `;
+
+        const inputContainer = document.createElement('div');
+        inputContainer.style.cssText = `
+          display: flex;
+          gap: 10px;
+          align-items: center;
+        `;
+
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.placeholder = 'Ask me anything...';
+        input.style.cssText = `
+          flex: 1;
+          padding: 12px;
+          border: 1px solid #ddd;
+          border-radius: 6px;
+          outline: none;
+          font-size: 14px;
+        `;
+
+        const sendButton = document.createElement('button');
+        sendButton.innerHTML = '▶️';
+        sendButton.style.cssText = `
+          padding: 12px 15px;
+          background: #667eea;
+          color: white;
+          border: none;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: background 0.2s;
+        `;
+
+        // Send button hover
+        sendButton.addEventListener('mouseenter', () => {
+          sendButton.style.background = '#5a67d8';
+        });
+        sendButton.addEventListener('mouseleave', () => {
+          sendButton.style.background = '#667eea';
+        });
+
+        // Add CSS animations
+        const style = document.createElement('style');
+        style.textContent = `
+          @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          #chat-window.show {
+            display: flex !important;
+            animation: slideUp 0.3s ease-out;
+          }
+          #chat-messages::-webkit-scrollbar {
+            width: 6px;
+          }
+          #chat-messages::-webkit-scrollbar-track {
+            background: #f1f1f1;
+          }
+          #chat-messages::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 3px;
+          }
+        `;
+        document.head.appendChild(style);
+
+        // Send message function
+        const sendMessage = async () => {
+          const messageText = input.value.trim();
+          if (!messageText) return;
+
+          // Clear input
+          input.value = '';
+          sendButton.disabled = true;
+          sendButton.innerHTML = '⏳';
+
+          // Add user message
+          const userMessage = document.createElement('div');
+          userMessage.style.cssText = `
+            background: #667eea;
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            margin-left: 20px;
+            text-align: right;
+            animation: fadeIn 0.3s ease-in;
+          `;
+          userMessage.textContent = messageText;
+          messages.appendChild(userMessage);
+          messages.scrollTop = messages.scrollHeight;
+
+          try {
+            // Call API
+            const response = await fetch('/api/chat', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ message: messageText }),
+            });
+
+            const data = await response.json();
+            
+            // Add AI response
+            const aiMessage = document.createElement('div');
+            aiMessage.style.cssText = `
+              background: #e8f5e8;
+              padding: 12px;
+              border-radius: 8px;
+              margin-bottom: 10px;
+              border-left: 3px solid #4caf50;
+              animation: fadeIn 0.3s ease-in;
+            `;
+            aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${data.message || data.response || 'I apologize, but I encountered an issue. Please try again.'}`;
+            messages.appendChild(aiMessage);
+            
+          } catch (error) {
+            // Error message
+            const errorMessage = document.createElement('div');
+            errorMessage.style.cssText = `
+              background: #ffebee;
+              color: #c62828;
+              padding: 12px;
+              border-radius: 8px;
+              margin-bottom: 10px;
+              border-left: 3px solid #f44336;
+              animation: fadeIn 0.3s ease-in;
+            `;
+            errorMessage.innerHTML = `<strong>❌ Error:</strong><br/>Sorry, I'm having trouble connecting. Please try again.`;
+            messages.appendChild(errorMessage);
+          }
+
+          // Reset button
+          sendButton.disabled = false;
+          sendButton.innerHTML = '▶️';
+          messages.scrollTop = messages.scrollHeight;
+        };
+
+        // Event listeners
+        button.addEventListener('click', () => {
+          const isVisible = chatWindow.style.display === 'flex';
+          if (isVisible) {
+            chatWindow.style.display = 'none';
+            chatWindow.classList.remove('show');
+          } else {
+            chatWindow.style.display = 'flex';
+            chatWindow.classList.add('show');
+            input.focus();
+          }
+        });
+
+        header.querySelector('#close-chat')?.addEventListener('click', () => {
+          chatWindow.style.display = 'none';
+          chatWindow.classList.remove('show');
+        });
+
+        sendButton.addEventListener('click', sendMessage);
+        
+        input.addEventListener('keypress', (e) => {
+          if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+          }
+        });
+
+        // Assemble components
+        inputContainer.appendChild(input);
+        inputContainer.appendChild(sendButton);
+        inputArea.appendChild(inputContainer);
+
+        chatWindow.appendChild(header);
+        chatWindow.appendChild(messages);
+        chatWindow.appendChild(inputArea);
+
+        container.appendChild(button);
+        container.appendChild(chatWindow);
+
+        // Add to page
+        document.body.appendChild(container);
+
+        console.log('✅ Inline chat widget created successfully!');
+        
+      } catch (error) {
+        console.error('❌ Error creating inline chat widget:', error);
+      }
+    };
+
+    // Create widget immediately if DOM is ready
     if (document.readyState === 'complete') {
-      console.log('📄 Document already complete, loading immediately');
-      setTimeout(loadChatWidget, 100);
+      createInlineChatWidget();
     } else {
-      console.log('📄 Document not complete, waiting for load event');
-      window.addEventListener('load', () => {
-        console.log('📄 Window load event fired');
-        setTimeout(loadChatWidget, 500);
-      });
+      // Wait for DOM to be ready
+      document.addEventListener('DOMContentLoaded', createInlineChatWidget);
     }
-    
-    // Backup loading attempts
-    const timeouts = [1000, 3000, 5000];
-    const timeoutIds = timeouts.map((delay, index) => 
-      setTimeout(() => {
-        console.log(`🔄 Backup load attempt ${index + 1} after ${delay}ms`);
-        loadChatWidget();
-      }, delay)
-    );
 
     // Cleanup function
     return () => {
-      console.log('🧹 ChatWidgetLoader cleanup');
-      timeoutIds.forEach(clearTimeout);
+      const widget = document.getElementById('chat-widget-container');
+      if (widget) {
+        widget.remove();
+      }
     };
   }, []);
 
-  // This component doesn't render anything visible
+  // Don't render anything - we create the widget directly in the DOM
   return null;
 }

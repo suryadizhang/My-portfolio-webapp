@@ -1,9 +1,9 @@
 {
   "version": 2,
-  "buildCommand": "npm install --production=false && npm run build",
+  "buildCommand": "cd apps/web && npm install --production=false && npm run build",
   "installCommand": "npm ci",
-  "outputDirectory": "apps/web/.next",
   "framework": "nextjs",
+  "rootDirectory": "apps/web",
   "env": {
     "NODE_ENV": "production",
     "NEXT_PUBLIC_SITE_URL": "https://myportfolio.mysticdatanode.net",
