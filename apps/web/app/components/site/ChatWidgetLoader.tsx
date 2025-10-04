@@ -1,12 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 
 export function ChatWidgetLoader() {
-  const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
-    setMounted(true);
     
     console.log('🤖 ChatWidgetLoader: Mounting inline chat widget...');
     
@@ -239,8 +236,17 @@ export function ChatWidgetLoader() {
               margin-bottom: 10px;
               border-left: 3px solid #4caf50;
               animation: fadeIn 0.3s ease-in;
+              line-height: 1.5;
+              font-family: inherit;
             `;
-            aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${data.message || data.reply || data.response || 'I apologize, but I encountered an issue. Please try again.'}`;
+            // Format message content for proper display
+            const messageContent = data.message || data.reply || data.response || 'I apologize, but I encountered an issue. Please try again.';
+            const formattedContent = messageContent
+              .replace(/\n/g, '<br/>')
+              .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+              .replace(/\*(.*?)\*/g, '<em>$1</em>');
+            
+            aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${formattedContent}`;
             messages.appendChild(aiMessage);
             
           } catch (error) {
