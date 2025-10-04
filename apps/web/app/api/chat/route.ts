@@ -9,11 +9,19 @@ const openai = new OpenAI({
 // AI-powered chatbot for Suryadi Zhang's portfolio
 export async function POST(request: NextRequest) {
   try {
-    const { messages } = await request.json()
+    const body = await request.json()
     
-    // Get the last user message for context
-    const lastMessage = messages[messages.length - 1]?.content || ''
-    const lowerMessage = lastMessage.toLowerCase()
+    // Handle both message formats for compatibility
+    let userMessage = ''
+    if (body.message) {
+      // Single message format from frontend
+      userMessage = body.message
+    } else if (body.messages && body.messages.length > 0) {
+      // Messages array format
+      userMessage = body.messages[body.messages.length - 1]?.content || ''
+    }
+    
+    const lowerMessage = userMessage.toLowerCase()
     
     // Enhanced intelligent responses with personality
     let reply = ""
@@ -83,7 +91,10 @@ For general questions not related to Suryadi's portfolio, feel free to provide h
 
 Keep responses concise but informative. Use emojis sparingly and appropriately.`
             },
-            ...messages
+            {
+              role: 'user',
+              content: userMessage
+            }
           ],
           max_tokens: 500,
           temperature: 0.7,
@@ -98,14 +109,14 @@ Keep responses concise but informative. Use emojis sparingly and appropriately.`
     }
     
     return Response.json({ 
-      reply: reply 
+      message: reply 
     })
     
   } catch (error) {
     console.error('Chat API error:', error)
     
     return Response.json({ 
-      reply: "Oops! I'm having a technical hiccup 🤖⚡ But hey, that's what makes development interesting, right? \n\nFor now, feel free to reach out to Suryadi directly:\n📧 suryadizhang.swe@gmail.com\n\nHe'd love to chat about his projects and experience!"
+      message: "Oops! I'm having a technical hiccup 🤖⚡ But hey, that's what makes development interesting, right? \n\nFor now, feel free to reach out to Suryadi directly:\n📧 suryadizhang.swe@gmail.com\n\nHe'd love to chat about his projects and experience!"
     }, { status: 500 })
   }
 }

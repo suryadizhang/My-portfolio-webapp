@@ -240,7 +240,7 @@ export function ChatWidgetLoader() {
               border-left: 3px solid #4caf50;
               animation: fadeIn 0.3s ease-in;
             `;
-            aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${data.message || data.response || 'I apologize, but I encountered an issue. Please try again.'}`;
+            aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${data.message || data.reply || data.response || 'I apologize, but I encountered an issue. Please try again.'}`;
             messages.appendChild(aiMessage);
             
           } catch (error) {
