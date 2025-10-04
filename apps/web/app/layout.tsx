@@ -5,7 +5,7 @@ import './globals.css'
 import Footer from '../src/components/footer'
 import { ThemeProvider } from './components/site/theme-provider'
 import Navbar from './components/site/Navbar'
-import { ChatWidgetLoader } from '../src/components/ChatWidgetLoader'
+import { ChatWidgetLoader } from '@/components/ChatWidgetLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
