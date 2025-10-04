@@ -5,6 +5,7 @@ import './globals.css'
 import Footer from '../src/components/footer'
 import { ThemeProvider } from './components/site/theme-provider'
 import Navbar from './components/site/Navbar'
+import { ChatWidgetLoader } from '../src/components/ChatWidgetLoader'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -114,86 +115,8 @@ export default function RootLayout({
           </div>
         </ThemeProvider>
         
-        {/* Chat widget will be loaded via external script after page load */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  if (typeof window === 'undefined') return;
-                  
-                  console.log('🤖 Chat widget initialization started');
-                  
-                  function loadChatWidget() {
-                    try {
-                      console.log('📡 Attempting to load chat widget...');
-                      
-                      // Check if already loaded
-                      if (document.getElementById('chat-widget-container') || document.getElementById('chat-widget-script')) {
-                        console.log('✅ Chat widget already loaded');
-                        return;
-                      }
-                      
-                      const script = document.createElement('script');
-                      script.id = 'chat-widget-script';
-                      script.src = '/chat-widget.js';
-                      script.async = true;
-                      script.defer = true;
-                      
-                      script.onload = function() {
-                        console.log('✅ Chat widget script loaded successfully');
-                      };
-                      
-                      script.onerror = function(e) {
-                        console.error('❌ Chat widget failed to load:', e);
-                        console.error('❌ Script src was:', script.src);
-                      };
-                      
-                      document.body.appendChild(script);
-                      console.log('📝 Chat widget script added to document body');
-                      
-                    } catch (e) {
-                      console.error('❌ Error in loadChatWidget:', e);
-                    }
-                  }
-                  
-                  function initChatWidget() {
-                    try {
-                      console.log('🚀 Initializing chat widget, document state:', document.readyState);
-                      
-                      if (document.readyState === 'complete') {
-                        console.log('📄 Document complete, loading immediately');
-                        setTimeout(loadChatWidget, 500);
-                      } else {
-                        console.log('📄 Document not ready, waiting for load event');
-                        window.addEventListener('load', function() {
-                          console.log('📄 Load event fired');
-                          setTimeout(loadChatWidget, 1000);
-                        });
-                      }
-                    } catch (e) {
-                      console.error('❌ Error in initChatWidget:', e);
-                    }
-                  }
-                  
-                  // Start initialization
-                  initChatWidget();
-                  
-                  // Backup initialization after 3 seconds
-                  setTimeout(function() {
-                    if (!document.getElementById('chat-widget-script') && !document.getElementById('chat-widget-container')) {
-                      console.log('🔄 Backup chat widget load attempt...');
-                      loadChatWidget();
-                    }
-                  }, 3000);
-                  
-                } catch (e) {
-                  console.error('❌ Chat widget initialization failed:', e);
-                }
-              })();
-            `
-          }}
-        />
+        {/* Chat widget loader component */}
+        <ChatWidgetLoader />
       </body>
     </html>
   );
