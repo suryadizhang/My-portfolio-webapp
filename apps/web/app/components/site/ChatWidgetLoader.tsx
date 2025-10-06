@@ -382,6 +382,8 @@ export function ChatWidgetLoader() {
         const messageText = input.value.trim();
         if (!messageText) return;
 
+        console.log('📤 Sending message:', messageText);
+
         // Clear input
         input.value = '';
         sendButton.disabled = true;
@@ -404,6 +406,8 @@ export function ChatWidgetLoader() {
         messages.scrollTop = messages.scrollHeight;
 
         try {
+          console.log('🌐 Making API call to /api/chat...');
+          
           // Call API
           const response = await fetch('/api/chat', {
             method: 'POST',
@@ -411,7 +415,14 @@ export function ChatWidgetLoader() {
             body: JSON.stringify({ message: messageText }),
           });
 
+          console.log('📡 API Response status:', response.status);
+          
+          if (!response.ok) {
+            throw new Error(`API responded with status: ${response.status}`);
+          }
+
           const data = await response.json();
+          console.log('📦 API Response data:', data);
           
           // Add AI response
           const aiMessage = document.createElement('div');
@@ -427,6 +438,8 @@ export function ChatWidgetLoader() {
           });
           
           const messageContent = data.message || data.reply || data.response || 'I apologize, but I encountered an issue. Please try again.';
+          console.log('💬 AI message content:', messageContent);
+          
           const formattedContent = messageContent
             .replace(/\n/g, '<br/>')
             .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
@@ -434,8 +447,11 @@ export function ChatWidgetLoader() {
           
           aiMessage.innerHTML = `<strong>🤖 AI:</strong><br/>${formattedContent}`;
           messages.appendChild(aiMessage);
+          console.log('✅ AI message added to chat');
           
         } catch (error) {
+          console.error('❌ Chat API Error:', error);
+          
           // Error message
           const errorMessage = document.createElement('div');
           Object.assign(errorMessage.style, {
@@ -447,7 +463,7 @@ export function ChatWidgetLoader() {
             borderLeft: '3px solid #f44336',
             animation: 'fadeIn 0.3s ease-in',
           });
-          errorMessage.innerHTML = `<strong>❌ Error:</strong><br/>Sorry, I'm having trouble connecting. Please try again.`;
+          errorMessage.innerHTML = `<strong>❌ Error:</strong><br/>Sorry, I'm having trouble connecting. Please try again.<br/><small>Error details: ${error instanceof Error ? error.message : 'Unknown error'}</small>`;
           messages.appendChild(errorMessage);
         }
 
@@ -502,6 +518,7 @@ export function ChatWidgetLoader() {
       input.addEventListener('keypress', (e) => {
         if (e.key === 'Enter' && !e.shiftKey) {
           e.preventDefault();
+          console.log('⌨️ Enter key pressed, sending message...');
           sendMessage();
         }
       });
