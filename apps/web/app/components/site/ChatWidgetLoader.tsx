@@ -131,6 +131,7 @@ export function ChatWidgetLoader() {
         overflow: hidden !important;
         border: 1px solid #e0e0e0 !important;
         pointer-events: auto !important;
+        z-index: 2147483646 !important;
       }
 
       #chat-window.show {
@@ -138,12 +139,20 @@ export function ChatWidgetLoader() {
         animation: slideUp 0.3s ease-out !important;
       }
 
-      /* Ensure button is always visible */
+      /* Ensure button is always visible and clickable */
       #chat-button {
         display: flex !important;
         pointer-events: auto !important;
         opacity: 1 !important;
         visibility: visible !important;
+        position: relative !important;
+        z-index: 2147483647 !important;
+      }
+
+      /* Force container positioning */
+      #chat-widget-container {
+        pointer-events: auto !important;
+        user-select: none !important;
       }
 
       @keyframes fadeIn {
@@ -277,9 +286,12 @@ export function ChatWidgetLoader() {
         visibility: 'visible',
       });
 
-      // Create chat window
+      // Create chat window (hidden by default)
       const chatWindow = document.createElement('div');
       chatWindow.id = 'chat-window';
+      // Ensure it starts hidden
+      chatWindow.style.display = 'none';
+      chatWindow.classList.remove('show');
 
       // Chat header
       const header = document.createElement('div');
@@ -459,18 +471,26 @@ export function ChatWidgetLoader() {
       sendButton.addEventListener('mouseenter', addSendHover, { passive: true });
       sendButton.addEventListener('mouseleave', removeSendHover, { passive: true });
 
-      // Event listeners
-      button.addEventListener('click', () => {
-        const isVisible = chatWindow.style.display === 'flex';
+      // Event listeners with debugging
+      button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('🔘 Chat button clicked!');
+        
+        const isVisible = chatWindow.style.display === 'flex' || chatWindow.classList.contains('show');
+        console.log('💬 Chat window currently visible:', isVisible);
+        
         if (isVisible) {
           chatWindow.style.display = 'none';
           chatWindow.classList.remove('show');
+          console.log('🙈 Chat window hidden');
         } else {
           chatWindow.style.display = 'flex';
           chatWindow.classList.add('show');
-          input.focus();
+          console.log('👁️ Chat window shown');
+          setTimeout(() => input.focus(), 100);
         }
-      }, { passive: true });
+      }, { passive: false });
 
       header.querySelector('#close-chat')?.addEventListener('click', () => {
         chatWindow.style.display = 'none';
@@ -522,8 +542,9 @@ export function ChatWidgetLoader() {
             rect: { width: rect.width, height: rect.height, bottom: rect.bottom, right: rect.right }
           });
           
-          // Force visibility if hidden
-          if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0') {
+          // Force visibility and ensure proper positioning
+          if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0' || 
+              styles.position !== 'fixed' || rect.bottom < 0 || rect.right < 0) {
             element.style.cssText += `
               display: block !important;
               visibility: visible !important;
@@ -532,8 +553,21 @@ export function ChatWidgetLoader() {
               bottom: 20px !important;
               right: 20px !important;
               z-index: 2147483647 !important;
+              pointer-events: auto !important;
+              transform: none !important;
             `;
-            console.log('🔧 Forced widget visibility');
+            console.log('🔧 Forced widget visibility and positioning');
+            
+            // Also ensure the button is clickable
+            const chatButton = element.querySelector('#chat-button') as HTMLElement;
+            if (chatButton) {
+              chatButton.style.cssText += `
+                pointer-events: auto !important;
+                cursor: pointer !important;
+                user-select: none !important;
+              `;
+              console.log('🖱️ Fixed button interactions');
+            }
           }
         } else {
           console.error('❌ Widget element not found in DOM');
