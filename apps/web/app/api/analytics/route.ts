@@ -66,7 +66,8 @@ function getSessionId(request: NextRequest): string {
   
   // Cleanup old sessions
   const now = Date.now()
-  for (const [key, session] of sessions.entries()) {
+  const sessionEntries = Array.from(sessions.entries())
+  for (const [key, session] of sessionEntries) {
     if (now - session.createdAt.getTime() > 30 * 60 * 1000) {
       sessions.delete(key)
     }
