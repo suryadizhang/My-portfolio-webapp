@@ -130,11 +130,20 @@ export function ChatWidgetLoader() {
         flex-direction: column !important;
         overflow: hidden !important;
         border: 1px solid #e0e0e0 !important;
+        pointer-events: auto !important;
       }
 
       #chat-window.show {
         display: flex !important;
         animation: slideUp 0.3s ease-out !important;
+      }
+
+      /* Ensure button is always visible */
+      #chat-button {
+        display: flex !important;
+        pointer-events: auto !important;
+        opacity: 1 !important;
+        visibility: visible !important;
       }
 
       @keyframes fadeIn {
@@ -160,6 +169,61 @@ export function ChatWidgetLoader() {
     `;
     
     document.head.appendChild(style);
+  }, []);
+
+  // Simplified fallback widget for immediate visibility
+  const createFallbackWidget = useCallback(() => {
+    console.log('🔄 Creating fallback widget...');
+    
+    // Remove any existing widgets
+    const existing = document.getElementById('chat-widget-container');
+    if (existing) existing.remove();
+    
+    // Create minimal container
+    const container = document.createElement('div');
+    container.id = 'chat-widget-container';
+    container.style.cssText = `
+      position: fixed !important;
+      bottom: 20px !important;
+      right: 20px !important;
+      z-index: 2147483647 !important;
+      pointer-events: auto !important;
+      display: block !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `;
+    
+    // Create simple button
+    const button = document.createElement('button');
+    button.id = 'chat-button';
+    button.innerHTML = '💬';
+    button.style.cssText = `
+      width: 60px !important;
+      height: 60px !important;
+      border-radius: 50% !important;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      border: none !important;
+      color: white !important;
+      cursor: pointer !important;
+      display: flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      font-size: 24px !important;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+      pointer-events: auto !important;
+      visibility: visible !important;
+      opacity: 1 !important;
+    `;
+    
+    button.onclick = () => {
+      alert('Chat widget is loading! Please refresh the page if you don\'t see it.');
+    };
+    
+    container.appendChild(button);
+    document.body.appendChild(container);
+    
+    console.log('✅ Fallback widget created');
+    return container;
   }, []);
 
   // Complete chat widget creation function
@@ -206,6 +270,11 @@ export function ChatWidgetLoader() {
         fontFamily: 'inherit',
         fontSize: '0',
         transition: 'transform 0.2s ease',
+        position: 'relative',
+        zIndex: '2147483647',
+        pointerEvents: 'auto',
+        opacity: '1',
+        visibility: 'visible',
       });
 
       // Create chat window
@@ -436,6 +505,41 @@ export function ChatWidgetLoader() {
       
       widgetRef.current = container;
       
+      // Force visibility check and debug info
+      setTimeout(() => {
+        const element = document.getElementById('chat-widget-container');
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          const styles = window.getComputedStyle(element);
+          console.log('✅ Widget mounted and positioned:', {
+            position: styles.position,
+            bottom: styles.bottom,
+            right: styles.right,
+            zIndex: styles.zIndex,
+            display: styles.display,
+            visibility: styles.visibility,
+            opacity: styles.opacity,
+            rect: { width: rect.width, height: rect.height, bottom: rect.bottom, right: rect.right }
+          });
+          
+          // Force visibility if hidden
+          if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0') {
+            element.style.cssText += `
+              display: block !important;
+              visibility: visible !important;
+              opacity: 1 !important;
+              position: fixed !important;
+              bottom: 20px !important;
+              right: 20px !important;
+              z-index: 2147483647 !important;
+            `;
+            console.log('🔧 Forced widget visibility');
+          }
+        } else {
+          console.error('❌ Widget element not found in DOM');
+        }
+      }, 100);
+      
       // Performance tracking
       if (performance?.mark) {
         performance.mark('chat-widget-created');
@@ -457,18 +561,22 @@ export function ChatWidgetLoader() {
       // Self-healing: retry after delay
       setTimeout(() => {
         if (mountedRef.current) {
-          // Use direct function call to avoid circular dependency
-          setTimeout(() => {
-            if (mountedRef.current && !widgetRef.current) {
-              createInlineChatWidget();
-            }
-          }, 1000);
+          // Use fallback widget if main creation keeps failing
+          if (errorCount.current >= maxErrors - 1) {
+            createFallbackWidget();
+          } else {
+            setTimeout(() => {
+              if (mountedRef.current && !widgetRef.current) {
+                createInlineChatWidget();
+              }
+            }, 1000);
+          }
         }
       }, 1000);
       
       return null;
     }
-  }, []);
+  }, [createFallbackWidget]);
 
   // Universal widget initialization
   const initializeWidget = useCallback(() => {
@@ -527,6 +635,14 @@ export function ChatWidgetLoader() {
       setTimeout(loadWidget, 200);
     }
 
+    // Fallback timeout - if widget not created in 5 seconds, create simple version
+    const fallbackTimeout = setTimeout(() => {
+      if (!widgetRef.current) {
+        console.log('⚠️ Main widget failed to load, creating fallback...');
+        createFallbackWidget();
+      }
+    }, 5000);
+
     // Extension conflict monitoring with efficient observer
     let observer: MutationObserver | null = null;
     
@@ -581,13 +697,18 @@ export function ChatWidgetLoader() {
         performanceObserverRef.current.disconnect();
       }
       
+      // Clear fallback timeout
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout);
+      }
+      
       // Clean up style sheet
       const style = document.querySelector('style[data-chat-widget="universal-protection"]');
       if (style) {
         style.remove();
       }
     };
-  }, [preventExtensionConflicts, setupPerformanceMonitoring, initializeWidget]);
+  }, [preventExtensionConflicts, setupPerformanceMonitoring, initializeWidget, createFallbackWidget]);
 
   return null;
 }
