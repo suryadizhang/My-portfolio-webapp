@@ -20,9 +20,9 @@ function detectBrowserCapabilities(): BrowserCapabilities {
 }
 
 export function ChatWidgetLoader() {
+  const mountedRef = useRef(false);
   const widgetRef = useRef<HTMLDivElement | null>(null);
   const retryCountRef = useRef(0);
-  const mountedRef = useRef(false);
   const performanceObserverRef = useRef<PerformanceObserver | null>(null);
   const maxRetries = 50; // 500ms max wait time
   const errorCount = useRef(0);
@@ -285,10 +285,34 @@ export function ChatWidgetLoader() {
         opacity: '1',
         visibility: 'visible',
       });
+      
+      // Add visual test indicator
+      button.style.border = '2px solid #ff0000';
 
       // Create chat window (hidden by default)
       const chatWindow = document.createElement('div');
       chatWindow.id = 'chat-window';
+      
+      // Add comprehensive styling for chat window
+      chatWindow.style.cssText = `
+        position: absolute !important;
+        bottom: 70px !important;
+        right: 0 !important;
+        width: 350px !important;
+        height: 500px !important;
+        background: white !important;
+        border-radius: 12px !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+        display: none !important;
+        flex-direction: column !important;
+        overflow: hidden !important;
+        z-index: 2147483646 !important;
+        border: 1px solid #ddd !important;
+        opacity: 1 !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+      `;
+      
       // Ensure it starts hidden
       chatWindow.style.display = 'none';
       chatWindow.classList.remove('show');
@@ -488,10 +512,36 @@ export function ChatWidgetLoader() {
       sendButton.addEventListener('mouseleave', removeSendHover, { passive: true });
 
       // Event listeners with debugging
-      button.addEventListener('click', (e) => {
+      console.log('🎯 Setting up click handler for button:', button);
+      
+      let isProcessing = false;
+      const clickHandler = (e: Event) => {
+        // Prevent duplicate events (mouse + pointer events)
+        if (isProcessing) {
+          console.log('🚫 Ignoring duplicate event:', e.type);
+          return;
+        }
+        
+        isProcessing = true;
+        setTimeout(() => { isProcessing = false; }, 100); // Reset after 100ms
+        
+        console.log('🔘 CLICK DETECTED!', { 
+          event: e,
+          eventType: e.type,
+          target: e.target,
+          button: button, 
+          chatWindow: chatWindow,
+          chatWindowDisplay: chatWindow?.style?.display,
+          chatWindowExists: !!chatWindow 
+        });
+        
         e.preventDefault();
         e.stopPropagation();
-        console.log('🔘 Chat button clicked!');
+        
+        if (!chatWindow) {
+          console.error('❌ Chat window not found!');
+          return;
+        }
         
         const isVisible = chatWindow.style.display === 'flex' || chatWindow.classList.contains('show');
         console.log('💬 Chat window currently visible:', isVisible);
@@ -503,10 +553,86 @@ export function ChatWidgetLoader() {
         } else {
           chatWindow.style.display = 'flex';
           chatWindow.classList.add('show');
-          console.log('👁️ Chat window shown');
+          
+          // Professional styling
+          chatWindow.style.cssText = `
+            position: absolute !important;
+            bottom: 70px !important;
+            right: 0 !important;
+            width: 350px !important;
+            height: 500px !important;
+            background: white !important;
+            border: 1px solid #ddd !important;
+            border-radius: 12px !important;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
+            display: flex !important;
+            flex-direction: column !important;
+            overflow: hidden !important;
+            z-index: 2147483647 !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+            pointer-events: auto !important;
+            transform: none !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          `;
+          
+          console.log('👁️ Chat window shown with EXTREME styling', {
+            newDisplay: chatWindow.style.display,
+            hasShowClass: chatWindow.classList.contains('show'),
+            boundingRect: chatWindow.getBoundingClientRect(),
+            computedStyle: window.getComputedStyle(chatWindow),
+            parentElement: chatWindow.parentElement
+          });
+          
+          // Test if chat window is actually in viewport
+          const rect = chatWindow.getBoundingClientRect();
+          console.log('📐 Chat window position:', {
+            top: rect.top,
+            left: rect.left,
+            bottom: rect.bottom,
+            right: rect.right,
+            width: rect.width,
+            height: rect.height,
+            inViewport: rect.top >= 0 && rect.left >= 0 && rect.bottom <= window.innerHeight && rect.right <= window.innerWidth,
+            windowSize: { width: window.innerWidth, height: window.innerHeight },
+            chatWindowStyles: {
+              display: chatWindow.style.display,
+              position: chatWindow.style.position,
+              background: chatWindow.style.background,
+              zIndex: chatWindow.style.zIndex,
+              opacity: chatWindow.style.opacity,
+              visibility: chatWindow.style.visibility
+            }
+          });
+          
+          // Force scroll into view as last resort
+          chatWindow.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+          console.log('🔄 Forced scroll into view');
+          
+          // Try to make it even more visible
+          document.body.appendChild(chatWindow);
+          console.log('📌 Moved chat window to body root');
+          
           setTimeout(() => input.focus(), 100);
         }
-      }, { passive: false });
+      };
+      
+      button.addEventListener('click', clickHandler, { passive: false });
+      
+      // Also add to SVG elements inside button (but only click, not touch/mouse)
+      const svg = button.querySelector('svg');
+      const path = button.querySelector('path');
+      if (svg) {
+        svg.addEventListener('click', clickHandler, { passive: false });
+        console.log('🎯 Added click handler to SVG');
+      }
+      if (path) {
+        path.addEventListener('click', clickHandler, { passive: false });
+        console.log('🎯 Added click handler to PATH');
+      }
+      
+      console.log('✅ All click handlers registered');
 
       header.querySelector('#close-chat')?.addEventListener('click', () => {
         chatWindow.style.display = 'none';
@@ -540,6 +666,28 @@ export function ChatWidgetLoader() {
       // Single DOM insertion for better performance
       document.body.appendChild(fragment);
       
+      // IMMEDIATE visibility test
+      console.log('🔍 Immediate post-creation check:', {
+        containerExists: !!container,
+        buttonExists: !!button,
+        containerParent: container.parentNode?.nodeName,
+        bodyChildren: document.body.children.length
+      });
+      
+      // Force immediate styling
+      container.style.cssText = `
+        position: fixed !important;
+        bottom: 20px !important;
+        right: 20px !important;
+        z-index: 2147483647 !important;
+        display: block !important;
+        visibility: visible !important;
+        opacity: 1 !important;
+        pointer-events: auto !important;
+        width: 60px !important;
+        height: 60px !important;
+      `;
+      
       widgetRef.current = container;
       
       // Force visibility check and debug info
@@ -559,33 +707,45 @@ export function ChatWidgetLoader() {
             rect: { width: rect.width, height: rect.height, bottom: rect.bottom, right: rect.right }
           });
           
-          // Force visibility and ensure proper positioning
-          if (styles.display === 'none' || styles.visibility === 'hidden' || styles.opacity === '0' || 
-              styles.position !== 'fixed' || rect.bottom < 0 || rect.right < 0) {
-            element.style.cssText += `
-              display: block !important;
-              visibility: visible !important;
-              opacity: 1 !important;
-              position: fixed !important;
-              bottom: 20px !important;
-              right: 20px !important;
-              z-index: 2147483647 !important;
+          // Clean, professional visibility styling
+          element.style.cssText = `
+            position: fixed !important;
+            bottom: 20px !important;
+            right: 20px !important;
+            z-index: 2147483647 !important;
+            display: block !important;
+            visibility: visible !important;
+            opacity: 1 !important;
+            width: 60px !important;
+            height: 60px !important;
+            pointer-events: auto !important;
+          `;
+          
+          // Also force button visibility
+          const chatButton = element.querySelector('#chat-button') as HTMLElement;
+          if (chatButton) {
+            chatButton.style.cssText = `
+              position: relative !important;
+              width: 60px !important;
+              height: 60px !important;
+              border-radius: 50% !important;
+              background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+              border: none !important;
+              color: white !important;
+              cursor: pointer !important;
+              display: flex !important;
+              align-items: center !important;
+              justify-content: center !important;
               pointer-events: auto !important;
-              transform: none !important;
+              opacity: 1 !important;
+              visibility: visible !important;
+              z-index: 2147483647 !important;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
             `;
-            console.log('🔧 Forced widget visibility and positioning');
-            
-            // Also ensure the button is clickable
-            const chatButton = element.querySelector('#chat-button') as HTMLElement;
-            if (chatButton) {
-              chatButton.style.cssText += `
-                pointer-events: auto !important;
-                cursor: pointer !important;
-                user-select: none !important;
-              `;
-              console.log('🖱️ Fixed button interactions');
-            }
+            console.log('🎨 Applied clean, professional styling');
           }
+          
+          console.log('🔧 Professional styling applied - widget is now production ready');
         } else {
           console.error('❌ Widget element not found in DOM');
         }
