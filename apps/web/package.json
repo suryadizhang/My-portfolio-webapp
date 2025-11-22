@@ -13,7 +13,8 @@
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "analyze": "ANALYZE=true npm run build",
-    "bundle-analyze": "npx @next/bundle-analyzer"
+    "bundle-analyze": "npx @next/bundle-analyzer",
+    "encode-contact": "ts-node -P tsconfig.json src/scripts/encode-contact.ts"
   },
   "dependencies": {
     "@mdx-js/loader": "^3.0.0",

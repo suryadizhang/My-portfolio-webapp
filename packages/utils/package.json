@@ -9,6 +9,10 @@
     ".": {
       "types": "./src/index.ts",
       "default": "./src/index.ts"
+    },
+    "./contact/obfuscation": {
+      "types": "./src/contact/obfuscation.ts",
+      "default": "./src/contact/obfuscation.ts"
     }
   },
   "scripts": {

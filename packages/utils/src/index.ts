@@ -9,3 +9,6 @@ export * from './auth/index'
 
 // Export helper utilities
 export * from './lib/helpers'
+
+// Contact information obfuscation
+export * from './contact/obfuscation'
