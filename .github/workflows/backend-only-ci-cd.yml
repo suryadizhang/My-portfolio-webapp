@@ -1,8 +1,16 @@
 name: "Portfolio CI/CD - Backend Only"
 
-# DISABLED: This workflow is for future VPS backend deployment
-# Currently using Vercel for all deployments
 on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'apps/service-python/**'
+      - '.github/workflows/**'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'apps/service-python/**'
+      - '.github/workflows/**'
   workflow_dispatch:
     inputs:
       force_deploy:
@@ -10,17 +18,6 @@ on:
         required: false
         default: false
         type: boolean
-  # Uncomment below when VPS backend deployment is ready:
-  # push:
-  #   branches: [main, develop]
-  #   paths:
-  #     - 'apps/service-python/**'
-  #     - '.github/workflows/**'
-  # pull_request:
-  #   branches: [main, develop]
-  #   paths:
-  #     - 'apps/service-python/**'
-  #     - '.github/workflows/**'
 
 concurrency:
   group: backend-ci-cd-${{ github.ref }}
